@@ -1,4 +1,5 @@
 import logging
+import gc
 
 import discord
 
@@ -37,6 +38,9 @@ def start_bot():
 
             speech_gen = SpeechGenCommand(tree)
             speech_gen.add_commands()
+
+        if c["DEBUG"]["GC_DEBUG"].lower() == "true":
+            gc.set_debug(gc.DEBUG_LEAK | gc.DEBUG_STATS)
 
     command_test = ImageGenCommands(tree)
     command_test.add_commands()
