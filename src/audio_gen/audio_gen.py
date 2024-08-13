@@ -106,14 +106,16 @@ async def extend_audio(params: AudioWorkflow):
     return await get_data(results)
 
 async def generate_tts(params: AudioWorkflow):
-    async with Workflow():
+    with Workflow():
         model, sr = TortoiseTTSLoader(True, False, False, False)
         raw_audio = TortoiseTTSGenerate(model, params.voice, params.prompt, 4, 8, 8, 0.3, 2, 4, 0.8, 300, 0.7000000000000001, 10, True, 2, 1, params.seed or random.randint(0, 2**32 - 1))
         raw_audio = ConvertAudio(raw_audio, sr, 44100, 1)
         image = SpectrogramImage(raw_audio, 1024, 256, 1024, 0.5, True, True)
-        image = ImageResize(image, 'resize', 'true', 'bicubic', 2, 512, 128)
-        video = CombineImageWithAudio(image, raw_audio, 44100, 'webm', 'final_output')
-    results = await video._wait()
+        image = ImageResize(image, "rescale", 'true', "bicubic", 2, 512, 128)
+        image_preview = SaveImage(image, 'spectrogram')
+        video = CombineImageWithAudio(image, raw_audio, 44100, "webm", 'final_output')
+    await image_preview
+    results = await video
     return await get_data(results)
 
 async def generate_music_with_tts(params: AudioWorkflow):
