@@ -220,6 +220,7 @@ class FluxWorkflow(SDWorkflow):
         self.model = model
         self.clip = clip
         self.vae = vae
+        self.clip_vision = None
 
     def sample(self, seed: int, num_samples: int, cfg_scale: float, sampler_name: str, scheduler: str, denoise_strength: float = 1, use_ays: bool = False):
         noise = RandomNoise(seed)
@@ -227,6 +228,24 @@ class FluxWorkflow(SDWorkflow):
         sampler = KSamplerSelect(sampler_name)
         sigmas = BasicScheduler(self.model, scheduler, num_samples, denoise_strength)
         self.output_latents, _ = SamplerCustomAdvanced(noise, guider, sampler, sigmas, self.latents[0])
+
+    def unclip_encode(self, image_input: list[Image]):
+        # if self.clip_vision is None:
+        #     self.clip_vision = CLIPVisionLoader(CLIPVisions.CLIP_ViT_bigG_14_laion2B_39B_b160k)
+        # for input in image_input:
+        #     if input is None:
+        #         continue
+        #     self.model, self.ip_adapter = IPAdapterUnifiedLoader(self.model, IPAdapterUnifiedLoader.preset.STANDARD_medium_strength)
+        #     self.model = IPAdapter(self.model, self.ip_adapter, input)
+        #     encoded_clip_vision = CLIPVisionEncode(self.clip_vision, input)
+        #     self.conditioning = UnCLIPConditioning(self.conditioning, encoded_clip_vision)
+        if self.clip_vision is None:
+            self.clip_vision = CLIPVisionLoader(CLIPVisions.clip_vit_large)
+        for input in image_input:
+            if input is None:
+                continue
+            ip_adapter = LoadFluxIPAdapter(LoadFluxIPAdapter.ipadatper.flux_ip_adapter, CLIPVisions.clip_vit_large)
+            self.model = ApplyFluxIPAdapter(self.model, ip_adapter, input)
 
 
 class UpscaleWorkflow:
