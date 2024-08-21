@@ -23,6 +23,15 @@ async def server_is_started() -> bool:
 def get_models():
     from comfy_script.runtime.nodes import Checkpoints
     models = [model.value for model in Checkpoints]
+
+    try:
+        from comfy_script.runtime.nodes import UNETs
+        from comfy_script.runtime.nodes import UnetLoaderGGUF
+        models.extend([model.value for model in UNETs])
+        models.extend([model.value for model in UnetLoaderGGUF.unet_name])
+    except:
+        pass
+
     return models
 
 def get_loras():

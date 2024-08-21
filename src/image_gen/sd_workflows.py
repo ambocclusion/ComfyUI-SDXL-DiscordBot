@@ -201,8 +201,18 @@ class SD3Workflow(SDWorkflow):
 
 class FluxWorkflow(SDWorkflow):
     def _load_model(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt: bool =False, tensorrt_model: str = None):
-        model, _, _ = CheckpointLoaderNF4(model_name)
+        if model_name.endswith(".gguf"):
+            model = UnetLoaderGGUF(model_name)
+        elif "nf4" in model_name.lower():
+            model, _, _ = CheckpointLoaderNF4(model_name)
+        else:
+            model = LoadDiffusionModel(model_name)
         clip = DualCLIPLoader(CLIPs.t5xxl_fp16, CLIPs.clip_l, DualCLIPLoader.type.flux)
+        if loras:
+            for lora in loras:
+                if lora.name == None or lora.name == "None":
+                    continue
+                model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if vae_name is not None:
             vae = VAELoader(vae_name)
         else:
