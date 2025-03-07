@@ -24,6 +24,9 @@ model_type_to_workflow = {
 config = configparser.ConfigParser()
 config.read("config.properties")
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
+use_align_your_steps = config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower
+image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower
+t2v_wan_teacache = config["WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower
 
 loop = None
 
@@ -117,7 +120,7 @@ async def _do_svd(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         model, clip_vision, vae = ImageOnlyCheckpointLoader(params.model)
         model = VideoLinearCFGGuidance(model, params.min_cfg)
         positive, negative, latent = SVDImg2vidConditioning(clip_vision, image, vae, 1024, 576, 25, params.motion, 8, params.augmentation)
-        if config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower == "true":
+        if use_align_your_steps:
             scheduler = AlignYourStepsScheduler("SVD", params.num_steps)
             sampler = KSamplerSelect("euler")
             latent, _ = SamplerCustom(model, True, params.seed, params.cfg_scale, positive, negative, sampler, scheduler, latent)
@@ -134,13 +137,32 @@ async def _do_svd(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
     return [final_video]
 
 async def _do_image_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora], interaction):
-    with Workflow() as wf:
+    import PIL
+    max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
+    with open(params.filename, "rb") as f:
+        image = PIL.Image.open(f)
+        width = image.width
+        height = image.height
+        # If either dimension exceeds max_width, resize while maintaining aspect ratio
+        if width > max_width or height > max_width:
+            scale_factor = min(max_width / width, max_width / height)
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            image = image.resize((new_width, new_height))
+            # Save the resized image
+            output_path, filename = os.path.split(params.filename)
+            new_filename = f"wan_{filename}"
+            output_path = output_path + "/" + new_filename
+            image.save(fp=output_path)
         
-        image = LoadImage(params.filename)[0]
+    with Workflow() as wf:       
+        image = LoadImage(output_path)[0]
         if params.model.endswith(".gguf"):
             model = UnetLoaderGGUF(params.model)
         else:
             model = UNETLoader(params.model)
+        if image_wan_teacache:
+            model = TeaCacheForVidGen(model, 'wan2.1_i2v_480p_14B', 0.26)
         model = ModelSamplingSD3(model, 8)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
@@ -148,7 +170,7 @@ async def _do_image_wan(params: ImageWorkflow, model_type: ModelType, loras: lis
         positive = CLIPTextEncode(params.prompt, clip)
         negative = CLIPTextEncode(params.negative_prompt or "静态", clip) # 静态 means "static"
         clip_vision_output = CLIPVisionEncode(clip_vision, image)
-        positive, negative, latent = WanImageToVideo(positive, negative, vae, 320, 320, 32, 1, clip_vision_output, image)
+        positive, negative, latent = WanImageToVideo(positive, negative, vae, new_width, new_height, 32, 1, clip_vision_output, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
@@ -169,6 +191,8 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
             model = UnetLoaderGGUF(params.model)
         else:
             model = UNETLoader(params.model)
+        if t2v_wan_teacache == "true":
+            model = TeaCacheForVidGen(model, 'wan2.1_t2v_1.3B', 0.08)
         model = ModelSamplingSD3(model, 8)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
