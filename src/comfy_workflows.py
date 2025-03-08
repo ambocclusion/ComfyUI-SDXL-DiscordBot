@@ -200,7 +200,7 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip) # 静态 means "static"
         latent = EmptyHunyuanLatentVideo(width=640, height = 480, length = 32)
-        latent = KSamplerAdvanced(model, 'enable', 341036448204821, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
+        latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
         latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
