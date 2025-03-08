@@ -194,12 +194,14 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         if t2v_wan_teacache == "true":
             model = TeaCacheForVidGen(model, 'wan2.1_t2v_1.3B', 0.08)
         model = ModelSamplingSD3(model, 8)
+        model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip) # 静态 means "static"
         latent = EmptyHunyuanLatentVideo(width=640, height = 480, length = 32)
-        latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
+        latent = KSamplerAdvanced(model, 'enable', 341036448204821, params.num_steps, params.cfg_scale, 'euler', 'normal', conditioning, negative_conditioning, latent, 0, 10, 'enable')
+        latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
