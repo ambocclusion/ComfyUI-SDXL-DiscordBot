@@ -163,9 +163,9 @@ class ImageGenCommands:
             )
             await self._do_request(
                 interaction,
-                f'🎥{interaction.user.mention} asked me to imagine "{prompt}"! with WAN! {random.choice(generation_messages)} 🎥',
+                f'🎥{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(generation_messages)} 🎥',
                 f'{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(completion_messages)} 🎥',
-                "wan",
+                "video",
                 params,
             )
 

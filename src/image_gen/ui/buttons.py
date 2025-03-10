@@ -152,7 +152,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         self.author = author
         self.command = command
 
-        self.is_video = command == "video" or command == "wan"
+        self.is_video = command == "video"
 
         # upscaling/alternative buttons not needed for video
         if self.is_video:
@@ -564,7 +564,7 @@ class EditResponse(discord.ui.View):
         images = await do_workflow(params, interaction)
         final_message = f'{interaction.user.mention} asked me to re-imagine "{params.prompt}", here is what I imagined for them. Seed: {params.seed}'
         buttons = Buttons(params, images, interaction.user, command=self.command)
-        if self.command == "video":
+        if self.command == "video": 
             collage = create_gif_collage(images)
             fname = "collage.gif"
         else:
