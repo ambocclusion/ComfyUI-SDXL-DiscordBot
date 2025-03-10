@@ -165,7 +165,7 @@ async def _do_image_wan(params: ImageWorkflow, model_type: ModelType, loras: lis
         else:
             model = UNETLoader(params.model)
         if image_wan_teacache == "true":
-            model = TeaCacheForVidGen(model, 'wan2.1_i2v_480p_14B', 0.26)
+            model = TeaCache(model, 'wan2.1_i2v_480p_14B', 0.26, 3)
             if image_wan_triton == "true":
                 model = CompileModel(model, 'default', 'inductor', False, False)
         model = ModelSamplingSD3(model, 8)
@@ -197,13 +197,14 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         else:
             model = UNETLoader(params.model)
         if t2v_wan_teacache == "true":
-            model = TeaCacheForVidGen(model, 'wan2.1_t2v_1.3B', 0.08)
+            model = TeaCache(model, 'wan2.1_t2v_1.3B', 0.08, 3)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
         if t2v_wan_triton == "true":
             model = CompileModel(model, 'default', 'inductor', False, False)
-            model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
+            if t2v_wan_distilled == "true":
+                model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
