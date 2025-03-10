@@ -24,9 +24,12 @@ model_type_to_workflow = {
 config = configparser.ConfigParser()
 config.read("config.properties")
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
-use_align_your_steps = config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower
-image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower
-t2v_wan_teacache = config["WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower
+use_align_your_steps = config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower()
+image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
+t2v_wan_teacache = config["WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
+image_wan_triton = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TRITON"].lower()
+t2v_wan_triton = config["WAN_GENERATION_DEFAULTS"]["USE_TRITON"].lower()
+t2v_wan_distilled = config["WAN_GENERATION_DEFAULTS"]["USE_DISTILLED_LORA"].lower()
 
 loop = None
 
@@ -161,8 +164,10 @@ async def _do_image_wan(params: ImageWorkflow, model_type: ModelType, loras: lis
             model = UnetLoaderGGUF(params.model)
         else:
             model = UNETLoader(params.model)
-        if image_wan_teacache:
+        if image_wan_teacache == "true":
             model = TeaCacheForVidGen(model, 'wan2.1_i2v_480p_14B', 0.26)
+            if image_wan_triton == "true":
+                model = CompileModel(model, 'default', 'inductor', False, False)
         model = ModelSamplingSD3(model, 8)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
@@ -194,14 +199,21 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         if t2v_wan_teacache == "true":
             model = TeaCacheForVidGen(model, 'wan2.1_t2v_1.3B', 0.08)
         model = ModelSamplingSD3(model, 8)
-        model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
+        if t2v_wan_distilled == "true":
+            model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
+        if t2v_wan_triton == "true":
+            model = CompileModel(model, 'default', 'inductor', False, False)
+            model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
         clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip) # 静态 means "static"
         latent = EmptyHunyuanLatentVideo(width=640, height = 480, length = 32)
-        latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
-        latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
+        if t2v_wan_distilled == "true":
+            latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
+            latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
+        else:
+            latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
