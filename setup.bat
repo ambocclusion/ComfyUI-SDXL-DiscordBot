@@ -1,8 +1,8 @@
 @ECHO OFF
 :: TORCH_CUDA_INDEX_URL=https://download.pytorch.org/whl/cu118  :: for cuda 11.8
 :: CUDA_VER=11.8
-set TORCH_CUDA_INDEX_URL=https://download.pytorch.org/whl/cu121
-set CUDA_VER=12.1
+set TORCH_CUDA_INDEX_URL=https://download.pytorch.org/whl/cu126
+set CUDA_VER=12.6
 
 IF NOT EXIST venv (
     python -m venv --copies venv
@@ -63,12 +63,12 @@ if NOT EXIST ComfyUI_Comfyroll_CustomNodes (
     ECHO cloned ComfyUI_Comfyroll_CustomNodes
 )
 
-IF NOT EXIST %EMBEDDED_COMFY_LOCATION%/ComfyUI-AnimateDiff-Evolved (
+IF NOT EXIST ComfyUI-AnimateDiff-Evolved (
     git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
     echo cloned ComfyUI-AnimateDiff-Evolved
 )
 
-IF NOT EXIST %EMBEDDED_COMFY_LOCATION%/ComfyUI-VideoHelperSuite (
+IF NOT EXIST ComfyUI-VideoHelperSuite (
     git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
     echo cloned ComfyUI-VideoHelperSuite
 )
@@ -89,6 +89,22 @@ IF NOT EXIST comfy_controlnet_preprocessors (
     echo cloned comfy_controlnet_preprocessors
 )
 cd comfy_controlnet_preprocessors
+python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
+
+cd %EMBEDDED_COMFY_LOCATION%\custom_nodes
+IF NOT EXIST ComfyUI_AdvancedRefluxControl (
+    git clone https://github.com/kaibioinfo/ComfyUI_AdvancedRefluxControl.git
+    echo cloned ComfyUI_AdvancedRefluxControl
+)
+cd ComfyUI_AdvancedRefluxControl
+python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
+
+cd %EMBEDDED_COMFY_LOCATION%\custom_nodes
+IF NOT EXIST ComfyUI-GGUF (
+    git clone https://github.com/city96/ComfyUI-GGUF.git
+    echo cloned ComfyUI-GGUF
+)
+cd ComfyUI-GGUF
 python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
 
 cd %EMBEDDED_COMFY_LOCATION%/models/checkpoints
