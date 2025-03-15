@@ -158,8 +158,9 @@ class ImageGenCommands:
                 sampler=WAN_GENERATION_DEFAULTS.sampler if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.sampler,
                 scheduler=WAN_GENERATION_DEFAULTS.scheduler if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.scheduler,
                 fps=WAN_GENERATION_DEFAULTS.fps if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.fps,
-                filename=await process_attachment(input_file, interaction) if input_file != None else None
-
+                filename=await process_attachment(input_file, interaction) if input_file != None else None,
+                style_prompt = WAN_GENERATION_DEFAULTS.style_prompt,
+                negative_style_prompt = WAN_GENERATION_DEFAULTS.negative_style_prompt
             )
             await self._do_request(
                 interaction,
