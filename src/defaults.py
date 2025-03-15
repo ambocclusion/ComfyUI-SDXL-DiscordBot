@@ -128,6 +128,8 @@ WAN_GENERATION_DEFAULTS = ImageWorkflow(
     None,  # filename
     "video",  # slash_command
     fps=int(config["WAN_GENERATION_DEFAULTS"]["FPS"]),
+    style_prompt=config["WAN_GENERATION_DEFAULTS"]["DEFAULT_STYLE_PROMPT"],
+    negative_style_prompt=config["WAN_GENERATION_DEFAULTS"]["DEFAULT_NEGATIVE_STYLE_PROMPT"],
 )
 
 IMAGE_WAN_GENERATION_DEFAULTS = ImageWorkflow(
@@ -148,6 +150,8 @@ IMAGE_WAN_GENERATION_DEFAULTS = ImageWorkflow(
     None,  # filename
     "video",  # slash_command
     fps=int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["FPS"]),
+    style_prompt=config["IMAGE_WAN_GENERATION_DEFAULTS"]["DEFAULT_STYLE_PROMPT"],
+    negative_style_prompt=config["IMAGE_WAN_GENERATION_DEFAULTS"]["DEFAULT_NEGATIVE_STYLE_PROMPT"],
 )
 
 
