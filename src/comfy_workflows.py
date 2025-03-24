@@ -24,7 +24,7 @@ model_type_to_workflow = {
 config = configparser.ConfigParser()
 config.read("config.properties")
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
-use_align_your_steps = config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower()
+use_align_your_steps = config["SVD_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower()
 image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
 t2v_wan_teacache = config["WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
 image_wan_triton = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TRITON"].lower()
