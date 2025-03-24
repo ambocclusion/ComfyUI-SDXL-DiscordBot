@@ -3,7 +3,7 @@ import configparser
 from src.image_gen.ImageWorkflow import *
 
 config = configparser.ConfigParser()
-config.read("config.properties")
+config.read("config.properties", encoding="utf8")
 
 def get_default_from_config(section : str, option : str, default = None) -> str:
     if section not in config:

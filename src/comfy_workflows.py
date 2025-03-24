@@ -22,7 +22,7 @@ model_type_to_workflow = {
 }
 
 config = configparser.ConfigParser()
-config.read("config.properties")
+config.read("config.properties", encoding="utf8")
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 use_align_your_steps = config["VIDEO_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower()
 image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()

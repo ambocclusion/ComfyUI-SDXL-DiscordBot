@@ -7,7 +7,7 @@ from src.image_gen import ImageWorkflow
 
 def read_config():
     config = configparser.ConfigParser()
-    config.read("config.properties")
+    config.read("config.properties", encoding='utf8')
     return config
 
 
@@ -115,7 +115,7 @@ async def process_attachment(attachment: Attachment, interaction: Interaction):
 def get_server_address():
     import configparser
     config = configparser.ConfigParser()
-    config.read("config.properties")
+    config.read("config.properties", encoding="utf8")
 
     if config["BOT"]["USE_EMBEDDED_COMFY"].lower() == "true":
         return f"http://localhost:{config['EMBEDDED']['SERVER_PORT']}"

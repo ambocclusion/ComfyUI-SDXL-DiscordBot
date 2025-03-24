@@ -14,7 +14,7 @@ load(get_server_address())
 from comfy_script.runtime.nodes import *
 
 config = configparser.ConfigParser()
-config.read("config.properties")
+config.read("config.properties", encoding="utf8")
 server_address = config["LOCAL"]["SERVER_ADDRESS"]
 
 
