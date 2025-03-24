@@ -4,7 +4,7 @@ import subprocess
 
 def run_comfy_client():
     config = configparser.ConfigParser()
-    config.read("config.properties")
+    config.read("config.properties", encoding='utf8')
 
     if config["BOT"]["USE_EMBEDDED_COMFY"].lower() == "true":
         import os
