@@ -8,6 +8,7 @@ from discord.app_commands import Range
 from src.command_descriptions import *
 from src.consts import *
 from src.image_gen.collage_utils import create_collage
+from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.ui.buttons import Buttons
 from src.util import process_attachment, unpack_choices, should_filter, get_filename
 
@@ -284,7 +285,14 @@ class ImageGenCommands:
             file_name = get_filename(interaction, params)
 
             fname = f"{file_name}.gif" if "GIF" in images[0].format else f"{file_name}.png"
-            await interaction.channel.send(content=final_message, file=discord.File(fp=create_collage(images, params), filename=fname), view=buttons)
+
+            collage_path = create_collage(images, params)
+
+            is_nsfw = False
+            if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+                is_nsfw = check_nsfw(collage_path, params.prompt)
+
+            await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
         except Exception as e:
             logger.exception("Error generating image: %s for command %s with params %s", e, command_name, params)
             await interaction.channel.send(f"{interaction.user.mention} `Error generating image: {e} for command {command_name}`")
