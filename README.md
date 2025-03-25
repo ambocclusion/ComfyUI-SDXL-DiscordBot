@@ -69,7 +69,7 @@ This bot is also compatible with other models found on HuggingFace and Civit.ai.
 
 ###### NSFW Detection
 
-Basic NSFW detection can be enabled on the bot to spoiler NSFW images. It's disabled by default, but can be enabled in `config.properties`. There are two layers to this detection. The first layer will simply spoiler the image if the prompt contains a word from a configurable list of NSFW terms. The second layer is image nudity detection provided through the lightweight [NudeNet package](https://pypi.org/project/nudenet/). In order to use it, you will need to grab one of the `.onnx` models from the [project's github](https://github.com/notAI-tech/NudeNet/) and place it in the data/ folder. You can configure what types of nudity it blocks using the list found in NudeNet's readme.
+Basic NSFW detection can be enabled on the bot to spoiler NSFW images. It's disabled by default, but can be enabled in `config.properties`. There are two layers to this detection. The first layer will simply spoiler the image if the prompt contains a word from a configurable blacklist of NSFW terms. The second layer is image nudity detection provided through the lightweight [NudeNet package](https://pypi.org/project/nudenet/). In order to use it, you will need to grab one of the `.onnx` models from the [project's github](https://github.com/notAI-tech/NudeNet/) and place it in the data/ folder. The blacklist of types of nudity can be configured using the classes found on the NudeNet readme. Note that this layer doesn't work with animated images or videos. 
 
 ### Manual
 
