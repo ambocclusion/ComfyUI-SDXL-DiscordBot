@@ -9,6 +9,7 @@ from PIL import Image
 
 from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
 from src.image_gen.ImageWorkflow import *
+from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.sd_workflows import *
 from src.util import get_loras_from_prompt
 
@@ -41,7 +42,7 @@ async def _do_txt2img(params: ImageWorkflow, model_type: ModelType, loras: list[
         workflow.condition_prompts(params.prompt, params.negative_prompt)
         workflow.sample(params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler or "normal", use_ays=params.use_align_your_steps)
         images = workflow.decode_and_save("final_output")
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     results = await images
     await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
@@ -58,7 +59,7 @@ async def _do_img2img(params: ImageWorkflow, model_type: ModelType, loras: list[
         workflow.condition_prompts(params.prompt, params.negative_prompt)
         workflow.sample(params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler or "normal", params.denoise_strength, use_ays=params.use_align_your_steps)
         images = workflow.decode_and_save("final_output")
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     results = await images
     await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
@@ -83,7 +84,7 @@ async def _do_add_detail(params: ImageWorkflow, model_type: ModelType, loras: li
         workflow.condition_for_detailing(params.detailing_controlnet, image_input)
         workflow.sample(params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler or "normal", params.denoise_strength, use_ays=False)
         images = workflow.decode_and_save("final_output")
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     results = await images
     await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
@@ -99,7 +100,7 @@ async def _do_image_mashup(params: ImageWorkflow, model_type: ModelType, loras: 
         workflow.unclip_encode(image_inputs, params)
         workflow.sample(params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler or "normal", use_ays=params.use_align_your_steps)
         images = workflow.decode_and_save("final_output")
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     results = await images
     await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
@@ -132,7 +133,7 @@ async def _do_svd(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 8, 0, "final_output", "image/gif", False, True, None, None)
         preview = PreviewImage(image)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
     await video._wait()
     results = video.wait()._output
@@ -180,7 +181,7 @@ async def _do_image_wan(params: ImageWorkflow, model_type: ModelType, loras: lis
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
         preview = PreviewImage(image)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
     await video._wait()
     results = video.wait()._output
@@ -217,7 +218,7 @@ async def _do_wan(params: ImageWorkflow, model_type: ModelType, loras: list[Lora
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction))
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await video._wait()
     results = video.wait()._output
     final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
@@ -254,13 +255,15 @@ workflow_type_to_method = {
 user_queues = {}
 
 
-def do_preview(task, node_id, image, interaction):
+def do_preview(task, node_id, image, interaction, prompt):
     if image is None:
         return
     try:
         filename = f"temp_preview_{task.prompt_id}.png"
         fp = os.path.join(comfy_root_directory, "output", filename)
         image.save(fp)
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True" and check_nsfw(fp, prompt) == True:
+            return
         asyncio.run_coroutine_threadsafe(interaction.edit_original_response(attachments=[discord.File(fp, filename)]), loop)
     except Exception as e:
         print(e)
