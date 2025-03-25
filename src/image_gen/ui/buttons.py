@@ -11,6 +11,7 @@ from discord import SelectOption
 from src.comfy_workflows import do_workflow
 from src.defaults import *
 from src.image_gen.collage_utils import create_collage, create_gif_collage
+from src.image_gen.nsfw_detection import check_nsfw
 from src.util import get_filename, build_command, get_workflow
 
 
@@ -44,16 +45,20 @@ class RerollableButton:
         images = await do_workflow(params, interaction)
 
         if self.is_video:
-            collage = create_gif_collage(images)
+            collage_path = create_gif_collage(images)
             fname = "collage.gif"
         else:
-            collage = create_collage(images, params)
+            collage_path = create_collage(images, params)
             fname = "collage.png"
+
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(collage_path, params.prompt)
 
         final_message = f'{interaction.user.mention} asked me to re-imagine "{params.prompt}", here is what I imagined for them. ' f"Seed: {params.seed}"
         buttons = Buttons(params, images, interaction.user, command=self.command)
 
-        await interaction.channel.send(content=final_message, file=discord.File(fp=collage, filename=fname), view=buttons)
+        await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 
 
 class DeletableButton:
@@ -211,7 +216,12 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         buttons = Buttons(params, images, interaction.user, command=self.command)
 
         fname = "collage.gif" if images[0].format == "GIF" else "collage.png"
-        await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname), view=buttons)
+
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(collage_path, params.prompt)
+
+        await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 
     async def upscale_and_send(self, interaction, button):
         task = asyncio.create_task(self._upscale_and_send(interaction, button))
@@ -239,7 +249,12 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         final_message = f"{interaction.user.mention} here is your upscaled image"
         buttons = AddDetailButtons(params, upscaled_image, author=interaction.user)
         fp = f"{get_filename(interaction, self.params)}_{index}.png"
-        await interaction.channel.send(content=final_message, file=discord.File(fp=upscaled_image_path, filename=fp), view=buttons)
+
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(upscaled_image_path, params.prompt)
+
+        await interaction.channel.send(content=final_message, file=discord.File(fp=upscaled_image_path, filename=fp, spoiler=is_nsfw), view=buttons)
 
     async def download_image(self, interaction, button):
         task = asyncio.create_task(self._download_image(interaction, button))
@@ -250,8 +265,13 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         file_name = f"{get_filename(interaction, self.params)}_{index}.png"
         pnginfo = get_workflow(self.images[index], self.params)
         fp = f"./out/images_{file_name}"
+
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(fp, self.params.prompt)
+
         self.images[index].save(fp, pnginfo=pnginfo)
-        await interaction.response.send_message(f"{interaction.user.mention}, here is your image!", file=discord.File(fp=fp, filename=file_name))
+        await interaction.response.send_message(f"{interaction.user.mention}, here is your image!", file=discord.File(fp=fp, filename=file_name, spoiler=is_nsfw))
 
 
 class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
@@ -308,8 +328,12 @@ class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
 
         fp = f"{get_filename(interaction, params)}_detail.png"
 
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(fp, params.prompt)
+
         await interaction.channel.send(
-            content=final_message, file=discord.File(fp=collage_path, filename=fp), view=AddDetailButtons(params, images[0], author=interaction.user)
+            content=final_message, file=discord.File(fp=collage_path, filename=fp, spoiler=is_nsfw), view=AddDetailButtons(params, images[0], author=interaction.user)
         )
 
 
@@ -565,12 +589,17 @@ class EditResponse(discord.ui.View):
         final_message = f'{interaction.user.mention} asked me to re-imagine "{params.prompt}", here is what I imagined for them. Seed: {params.seed}'
         buttons = Buttons(params, images, interaction.user, command=self.command)
         if self.command == "video": 
-            collage = create_gif_collage(images)
+            collage_path = create_gif_collage(images)
             fname = "collage.gif"
         else:
-            collage = create_collage(images, params)
+            collage_path = create_collage(images, params)
             fname = "collage.png"
-        await interaction.channel.send(content=final_message, file=discord.File(fp=collage, filename=fname), view=buttons)
+
+        is_nsfw = False
+        if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
+            is_nsfw = check_nsfw(collage_path, params.prompt)
+
+        await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 
     async def show_edit_message(self, interaction):
         await interaction.response.send_message("Here are some options to edit your images!", view=self, ephemeral=True)
