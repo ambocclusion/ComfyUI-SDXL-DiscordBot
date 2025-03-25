@@ -280,8 +280,6 @@ class ImageGenCommands:
 
             params.use_llm = False
 
-            buttons = Buttons(params, images, interaction.user, command=command_name)
-
             file_name = get_filename(interaction, params)
 
             fname = f"{file_name}.gif" if "GIF" in images[0].format else f"{file_name}.png"
@@ -291,6 +289,8 @@ class ImageGenCommands:
             is_nsfw = False
             if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
                 is_nsfw = check_nsfw(collage_path, params.prompt)
+            
+            buttons = Buttons(params, images, interaction.user, is_nsfw, command=command_name)
 
             await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
         except Exception as e:
