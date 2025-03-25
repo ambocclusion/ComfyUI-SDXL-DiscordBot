@@ -35,7 +35,7 @@ class NsfwDetector:
         prompt_words = ''.join(c for c in prompt if c.isalpha() or c.isspace()).split( )
 
         for word in prompt_words:
-            if word in self.term_blacklist:
+            if word.upper() in self.term_blacklist:
                 print("Blacklisted word found in prompt: " + word)
                 return True
 
