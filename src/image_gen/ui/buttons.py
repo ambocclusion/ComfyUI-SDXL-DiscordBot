@@ -214,7 +214,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         self.images[index].save(fp=params.filename)
         images = await do_workflow(params, interaction)
         collage_path = create_collage(images, params)
-        final_message = f"{interaction.user.mention} here are your alternative images"
+        final_message = f"{interaction.user.mention}, here are your alternative images! (prompt: `{params.prompt}`)"
 
         fname = "collage.gif" if images[0].format == "GIF" else "collage.png"
 
@@ -249,7 +249,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         pnginfo = get_workflow(upscaled_image, params)
         upscaled_image_path = f"./out/upscaledImage_{timestamp}.png"
         upscaled_image.save(upscaled_image_path, pnginfo=pnginfo)
-        final_message = f"{interaction.user.mention} here is your upscaled image"
+        final_message = f"{interaction.user.mention}, here is your upscaled image! (prompt: `{self.params.prompt}`)"
         buttons = AddDetailButtons(params, upscaled_image, author=interaction.user)
         fp = f"{get_filename(interaction, self.params)}_{index}.png"
 
@@ -271,7 +271,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
 
 
         self.images[index].save(fp, pnginfo=pnginfo)
-        await interaction.response.send_message(f"{interaction.user.mention}, here is your image!", file=discord.File(fp=fp, filename=file_name, spoiler=is_nsfw))
+        await interaction.response.send_message(f"{interaction.user.mention}, here is your image! (prompt: `{self.params.prompt}`)", file=discord.File(fp=fp, filename=file_name, spoiler=is_nsfw))
 
 
 class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
@@ -324,7 +324,7 @@ class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
             return
 
         collage_path = create_collage(images, params)
-        final_message = f"{interaction.user.mention} here is your image with more detail"
+        final_message = f"{interaction.user.mention}, here is your image with more detail! (prompt: `{params.prompt}`)"
 
         fp = f"{get_filename(interaction, params)}_detail.png"
 
