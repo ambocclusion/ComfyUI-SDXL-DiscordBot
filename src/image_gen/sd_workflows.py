@@ -2,7 +2,7 @@ import dataclasses
 from typing import Optional
 
 from comfy_script.runtime import *
-from src.image_gen.ImageWorkflow import ModelType
+from src.image_gen.ImageWorkflow import ImageWorkflow
 from src.util import get_server_address
 
 load(get_server_address())
@@ -17,37 +17,38 @@ class Lora:
 
 
 class SDWorkflow:
-    def __init__(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt=False, tensorrt_model: str = None):
-        self._load_model(model_name, clip_skip, loras, vae_name, use_tensorrt, tensorrt_model)
+    def __init__(self, params: ImageWorkflow):
+        self.params = params
+        self._load_model()
 
-    def _load_model(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt: bool =False, tensorrt_model: str = None):
-        if use_tensorrt is False or tensorrt_model is None or tensorrt_model == "":
-            model, clip, vae = CheckpointLoaderSimple(model_name)
+    def _load_model(self):
+        if self.params.use_tensorrt is False or self.params.tensorrt_model is None or self.params.tensorrt_model == "":
+            model, clip, vae = CheckpointLoaderSimple(self.params.model)
         else:
-            _, _, vae = CheckpointLoaderSimple(model_name)
-            model = TensorRTLoader(tensorrt_model, TensorRTLoader.model_type.sd1_x if isinstance(self, SD15Workflow) else TensorRTLoader.model_type.sdxl_base)
-        if vae_name is not None:
-            vae = VAELoader(vae_name)
-        if loras:
-            for lora in loras:
+            _, _, vae = CheckpointLoaderSimple(self.params.model)
+            model = TensorRTLoader(self.params.tensorrt_model, TensorRTLoader.model_type.sd1_x if isinstance(self, SD15Workflow) else TensorRTLoader.model_type.sdxl_base)
+        if self.params.vae_name is not None:
+            vae = VAELoader(self.params.vae_name)
+        if self.params.loras:
+            for lora in self.params.loras:
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        clip = CLIPSetLastLayer(clip, clip_skip)
+        clip = CLIPSetLastLayer(clip, self.params.clip_skip)
         self.model = model
         self.clip = clip
         self.vae = vae
         self.clip_vision = None
 
-    def create_latents(self, dimensions: tuple[int, int], batches: int):
-        width, height = dimensions
-        latent = EmptyLatentImage(width, height, batches)
+    def create_latents(self):
+        width, height = self.params.dimensions
+        latent = EmptyLatentImage(width, height, self.params.batch_size)
         self.latents = [latent]
 
-    def create_img2img_latents(self, image_input: Image, batches: int):
+    def create_img2img_latents(self, image_input: Image):
         latent = VAEEncode(image_input, self.vae)
-        if batches > 1:
-            latent = RepeatLatentBatch(latent, batches)
+        if self.params.batch_size > 1:
+            latent = RepeatLatentBatch(latent, self.params.batch_size)
         self.latents = [latent]
 
     def setup_for_animate_diff(self):
@@ -58,20 +59,20 @@ class SDWorkflow:
     def animate_diff_combine(self, images: Image):
         return VHSVideoCombine(images, 8, 0, 'final_output', 'image/gif', False, True, None, None)
 
-    def condition_prompts(self, positive_prompt: str, negative_prompt: str):
-        self.conditioning = CLIPTextEncode(positive_prompt, self.clip)
-        self.negative_conditioning = CLIPTextEncode(negative_prompt or "", self.clip)
+    def condition_prompts(self):
+        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
 
-    def condition_for_detailing(self, controlnet_name, image):
+    def condition_for_detailing(self, controlnet_name: str, image: Image):
         pass
 
-    def mask_for_inpainting(self, image_input: Image, inpainting_prompt: str, threshold: float):
+    def mask_for_inpainting(self, image_input: Image):
         clip_seg_model = CLIPSegModelLoader("CIDAS/clipseg-rd64-refined")
-        masking, _ = CLIPSegMasking(image_input, inpainting_prompt, clip_seg_model)
-        masking = MaskDominantRegion(masking, threshold)
+        masking, _ = CLIPSegMasking(image_input, self.params.inpainting_prompt, clip_seg_model)
+        masking = MaskDominantRegion(masking, self.params.inpainting_detection_threshold)
         self.latents[0] = SetLatentNoiseMask(self.latents[0], masking)
 
-    def unclip_encode(self, image_input: list[Image], params):
+    def unclip_encode(self, image_input: list[Image]):
         if self.clip_vision is None:
             self.clip_vision = CLIPVisionLoader(CLIPVisions.CLIP_ViT_bigG_14_laion2B_39B_b160k)
         for input in image_input:
@@ -82,15 +83,15 @@ class SDWorkflow:
             encoded_clip_vision = CLIPVisionEncode(self.clip_vision, input)
             self.conditioning = UnCLIPConditioning(self.conditioning, encoded_clip_vision)
 
-    def sample(self, seed: int, num_samples: int, cfg_scale: float, sampler_name: str, scheduler: str, denoise_strength: float = 1, use_ays: bool = False):
+    def sample(self, use_ays: bool = False):
         if use_ays:
-            num_samples = max(10, num_samples)
+            num_steps = max(10, self.params.num_steps)
             sampler = KSamplerSelect(KSamplerSelect.sampler_name.dpmpp_2m_sde)
             model_type = AlignYourStepsScheduler.model_type.SDXL if isinstance(self, SDXLWorkflow) else AlignYourStepsScheduler.model_type.SD1
-            sigmas = AlignYourStepsScheduler(model_type, num_samples, denoise_strength)
-            self.output_latents, _ = SamplerCustom(self.model, True, seed, cfg_scale, self.conditioning, self.negative_conditioning, sampler, sigmas, self.latents[0])
+            sigmas = AlignYourStepsScheduler(self.params.model_type, num_steps, self.params.denoise_strength)
+            self.output_latents, _ = SamplerCustom(self.model, True, seed, self.params.cfg_scale, self.conditioning, self.negative_conditioning, sampler, sigmas, self.latents[0])
         else:
-            self.output_latents = KSampler(self.model, seed, num_samples, cfg_scale, sampler_name, scheduler, self.conditioning, self.negative_conditioning, self.latents[0], denoise_strength)
+            self.output_latents = KSampler(self.model, self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler or "normal", self.conditioning, self.negative_conditioning, self.latents[0], self.params.denoise_strength)
 
     def decode(self):
         return VAEDecode(self.output_latents, self.vae)
