@@ -198,7 +198,7 @@ class SD3Workflow(SDWorkflow):
 
     def sample(self, use_ays: bool = False):
         self.model = ModelSamplingSD3(self.model, 3)
-        super().sample(self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler, self.params.denoise_strength, use_ays)
+        super().sample(use_ays)
 
 class FluxWorkflow(SDWorkflow):
     def _load_model(self):
