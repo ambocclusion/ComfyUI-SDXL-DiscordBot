@@ -58,7 +58,7 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
     )
     return workflow
 
-SD15_GENERATION_DEFAULTS = get_defaults_for_command("SD15_GENERATION_DEFAULTS", ModelType.SD15, "imagine")
+SD15_GENERATION_DEFAULTS = get_defaults_for_command("SD15_GENERATION_DEFAULTS", ModelType.SD15, "legacy")
 SDXL_GENERATION_DEFAULTS = get_defaults_for_command("SDXL_GENERATION_DEFAULTS", ModelType.SDXL, "sdxl")
 CASCADE_GENERATION_DEFAULTS = get_defaults_for_command("CASCADE_GENERATION_DEFAULTS", ModelType.CASCADE, "cascade")
 SVD_GENERATION_DEFAULTS = get_defaults_for_command("SVD_GENERATION_DEFAULTS", ModelType.VIDEO, "video")
@@ -71,7 +71,8 @@ ADD_DETAIL_DEFAULTS = get_defaults_for_command("ADD_DETAIL_DEFAULTS", None, "add
 UPSCALE_DEFAULTS = get_defaults_for_command("UPSCALE_DEFAULTS", None, "upscale")
 
 COMMAND_DEFAULTS = {
-    "imagine": SDXL_GENERATION_DEFAULTS,
+    "imagine": FLUX_GENERATION_DEFAULTS,
+    "legacy": SD15_GENERATION_DEFAULTS,
     "sdxl": SDXL_GENERATION_DEFAULTS,
     "cascade": CASCADE_GENERATION_DEFAULTS,
     "pony": PONY_GENERATION_DEFAULTS,

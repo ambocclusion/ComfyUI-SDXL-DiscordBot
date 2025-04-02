@@ -302,8 +302,6 @@ async def do_workflow(params: ImageWorkflow, interaction: discord.Interaction):
                 params.use_align_your_steps = False
             else:
                 params.use_align_your_steps = True if params.model_type != ModelType.SD3 else False
-                if params.cfg_scale < 1.2:
-                    params.cfg_scale = 4.0
 
             params.lora_dict = loras
 

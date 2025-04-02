@@ -75,6 +75,9 @@ class ImageGenCommands:
                 clip_skip=clip_skip or SD15_GENERATION_DEFAULTS.clip_skip,
                 use_llm=use_llm or False,
                 scheduler=scheduler or SD15_GENERATION_DEFAULTS.scheduler,
+                use_tensorrt=SD15_GENERATION_DEFAULTS.use_tensorrt,
+                tensorrt_model=SD15_GENERATION_DEFAULTS.tensorrt_model,
+                use_accelerator_lora=SD15_GENERATION_DEFAULTS.use_accelerator_lora,
             )
             await self._do_request(
                 interaction,
