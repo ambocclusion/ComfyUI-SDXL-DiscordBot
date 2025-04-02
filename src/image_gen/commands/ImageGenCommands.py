@@ -66,7 +66,7 @@ class ImageGenCommands:
                 num_steps or SD15_GENERATION_DEFAULTS.num_steps,
                 cfg_scale or SD15_GENERATION_DEFAULTS.cfg_scale,
                 seed=seed,
-                slash_command="imagine",
+                slash_command="legacy",
                 filename=fp if input_file is not None else None,
                 denoise_strength=denoise_strength or SD15_GENERATION_DEFAULTS.denoise_strength if input_file is not None else 1.0,
                 batch_size=SD15_GENERATION_DEFAULTS.batch_size,
@@ -418,6 +418,13 @@ class SD3Command(SDXLCommand):
 class FluxCommand(SDXLCommand):
     def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
         super().__init__(tree, "flux")
+        self.command_descs = FLUX_ARG_DESCS
+        self.command_choices = FLUX_ARG_CHOICES
+        self.model_type = ModelType.FLUX
+
+class ImagineCommand(SDXLCommand):
+    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+        super().__init__(tree, "imagine")
         self.command_descs = FLUX_ARG_DESCS
         self.command_choices = FLUX_ARG_CHOICES
         self.model_type = ModelType.FLUX
