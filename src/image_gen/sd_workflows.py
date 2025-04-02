@@ -88,8 +88,8 @@ class SDWorkflow:
             num_steps = max(10, self.params.num_steps)
             sampler = KSamplerSelect(KSamplerSelect.sampler_name.dpmpp_2m_sde)
             model_type = AlignYourStepsScheduler.model_type.SDXL if isinstance(self, SDXLWorkflow) else AlignYourStepsScheduler.model_type.SD1
-            sigmas = AlignYourStepsScheduler(self.params.model_type, num_steps, self.params.denoise_strength)
-            self.output_latents, _ = SamplerCustom(self.model, True, seed, self.params.cfg_scale, self.conditioning, self.negative_conditioning, sampler, sigmas, self.latents[0])
+            sigmas = AlignYourStepsScheduler(model_type, num_steps, self.params.denoise_strength)
+            self.output_latents, _ = SamplerCustom(self.model, True, self.params.seed, self.params.cfg_scale, self.conditioning, self.negative_conditioning, sampler, sigmas, self.latents[0])
         else:
             self.output_latents = KSampler(self.model, self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler or "normal", self.conditioning, self.negative_conditioning, self.latents[0], self.params.denoise_strength)
 
