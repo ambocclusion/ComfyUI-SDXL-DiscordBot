@@ -27,10 +27,10 @@ class SDWorkflow:
         else:
             _, _, vae = CheckpointLoaderSimple(self.params.model)
             model = TensorRTLoader(self.params.tensorrt_model, TensorRTLoader.model_type.sd1_x if isinstance(self, SD15Workflow) else TensorRTLoader.model_type.sdxl_base)
-        if self.params.vae_name is not None:
-            vae = VAELoader(self.params.vae_name)
-        if self.params.loras:
-            for lora in self.params.loras:
+        if self.params.vae is not None:
+            vae = VAELoader(self.params.vae)
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
@@ -106,11 +106,11 @@ class SD15Workflow(SDWorkflow):
 
 
 class SDXLWorkflow(SDWorkflow):
-    def condition_prompts(self, positive_prompt: str, negative_prompt: str):
-        self.conditioning = CLIPTextEncodeSDXL(self.clip, 4096, 4096, 0, 0, 4096, 4096, positive_prompt, positive_prompt)
-        self.negative_conditioning = CLIPTextEncode(negative_prompt, self.clip)
+    def condition_prompts(self):
+        self.conditioning = CLIPTextEncodeSDXL(self.clip, 4096, 4096, 0, 0, 4096, 4096, self.params.prompt, self.params.prompt)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
 
-    def condition_for_detailing(self, controlnet_name, image):
+    def condition_for_detailing(self, controlnet_name: str, image: Image):
         if controlnet_name is None or controlnet_name == "":
             return
         try:
@@ -121,60 +121,60 @@ class SDXLWorkflow(SDWorkflow):
         self.conditioning, self.negative_conditioning, _ = ACNAdvancedControlNetApply(self.conditioning, self.negative_conditioning, controlnet, image, model_optional=self.model)
 
 class PonyWorkflow(SDXLWorkflow):
-    def condition_prompts(self, positive_prompt: str, negative_prompt: str):
-        self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, positive_prompt, positive_prompt)
-        self.negative_conditioning = CLIPTextEncode(negative_prompt, self.clip)
+    def condition_prompts(self):
+        self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, self.params.prompt, self.params.prompt)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
 
 class SDCascadeWorkflow(SDWorkflow):
-    def _load_model(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt: bool = False, tensorrt_model: str = None):
-        self.model, self.clip, self.stage_c_vae, self.clip_vision = UnCLIPCheckpointLoader(model_name)
-        if loras:
-            for lora in loras:
+    def _load_model(self):
+        self.model, self.clip, self.stage_c_vae, self.clip_vision = UnCLIPCheckpointLoader(self.params.model)
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
                 if lora.name == None or lora.name == "None":
                     continue
                 self.model, self.clip = LoraLoader(self.model, self.clip, lora.name, lora.strength, lora.strength)
         self.stage_b_model, self.stage_b_clip, self.vae = CheckpointLoaderSimple(Checkpoints.cascade_stable_cascade_stage_b)
 
-    def create_latents(self, dimensions: tuple[int, int], batches: int):
-        width, height = dimensions
-        latent_c, latent_b = StableCascadeEmptyLatentImage(width, height, 42, batches)
+    def create_latents(self):
+        width, height = self.params.dimensions
+        latent_c, latent_b = StableCascadeEmptyLatentImage(width, height, 42, self.params.batch_size)
         self.latents = [latent_c, latent_b]
 
-    def create_img2img_latents(self, image_input: Image, batches: int):
+    def create_img2img_latents(self, image_input: Image):
         stage_c, stage_b = StableCascadeStageCVAEEncode(image_input, self.stage_c_vae, 32)
-        stage_c = RepeatLatentBatch(stage_c, batches)
-        stage_b = RepeatLatentBatch(stage_b, batches)
+        stage_c = RepeatLatentBatch(stage_c, self.params.batch_size)
+        stage_b = RepeatLatentBatch(stage_b, self.params.batch_size)
         self.latents = [stage_c, stage_b]
 
-    def unclip_encode(self, image_input: list[Image], params):
+    def unclip_encode(self, image_input: list[Image]):
         for input in image_input:
             encoded_clip_vision = CLIPVisionEncode(self.clip_vision, input)
             self.conditioning = UnCLIPConditioning(self.conditioning, encoded_clip_vision)
 
-    def condition_prompts(self, positive_prompt: str, negative_prompt: str):
-        self.conditioning = CLIPTextEncode(positive_prompt, self.clip)
+    def condition_prompts(self):
+        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
         self.stage_c_conditioning = self.conditioning
-        self.negative_conditioning = CLIPTextEncode(negative_prompt or "", self.clip)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
 
-    def sample(self, seed: int, num_samples: int, cfg_scale: float, sampler_name: str, scheduler: str, denoise_strength: float = 1, use_ays: bool = False):
-        stage_c = KSampler(self.model, seed, num_samples, cfg_scale, sampler_name, scheduler, self.conditioning, self.negative_conditioning, self.latents[0], denoise_strength)
+    def sample(self, use_ays: bool = False):
+        stage_c = KSampler(self.model, self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler, self.conditioning, self.negative_conditioning, self.latents[0], self.params.denoise_strength)
         self.stage_b_conditioning = StableCascadeStageBConditioning(self.stage_c_conditioning, self.latents[0])
         conditioning2 = StableCascadeStageBConditioning(self.stage_c_conditioning, stage_c)
         zeroed_out = ConditioningZeroOut(self.stage_c_conditioning)
-        self.output_latents = KSampler(self.stage_b_model, seed, 10, 1.1, sampler_name, scheduler, conditioning2, zeroed_out, self.latents[1], 1)
+        self.output_latents = KSampler(self.stage_b_model, self.params.seed, 10, 1.1, self.params.sampler, self.params.scheduler, conditioning2, zeroed_out, self.latents[1], 1)
 
 class SD3Workflow(SDWorkflow):
-    def _load_model(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt: bool = False, tensorrt_model: str = None):
-        if use_tensorrt is False or tensorrt_model is None or tensorrt_model == "":
-            model, _, vae = CheckpointLoaderSimple(model_name)
+    def _load_model(self):
+        if self.params.use_tensorrt is False or self.params.tensorrt_model is None or self.params.tensorrt_model == "":
+            model, _, vae = CheckpointLoaderSimple(self.params.model)
         else:
-            _, _, vae = CheckpointLoaderSimple(model_name)
-            model = TensorRTLoader(tensorrt_model, TensorRTLoader.model_type.sd3)
+            _, _, vae = CheckpointLoaderSimple(self.params.model)
+            model = TensorRTLoader(self.params.tensorrt_model, TensorRTLoader.model_type.sd3)
         clip = TripleCLIPLoader(CLIPs.clip_l, CLIPs.clip_g, CLIPs.t5xxl_fp16)
-        if vae_name is not None:
-            vae = VAELoader(vae_name)
-        if loras:
-            for lora in loras:
+        if self.params.vae is not None:
+            vae = VAELoader(self.params.vae)
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
@@ -183,61 +183,61 @@ class SD3Workflow(SDWorkflow):
         self.vae = vae
         self.clip_vision = None
 
-    def create_latents(self, dimensions: tuple[int, int], batches: int):
-        width, height = dimensions
-        latent = EmptySD3LatentImage(width, height, batches)
+    def create_latents(self):
+        width, height = self.params.dimensions
+        latent = EmptySD3LatentImage(width, height, self.params.batch_size)
         self.latents = [latent]
 
-    def condition_prompts(self, positive_prompt: str, negative_prompt: str):
-        self.conditioning = CLIPTextEncode(positive_prompt, self.clip)
-        self.negative_conditioning = CLIPTextEncode(negative_prompt or "", self.clip)
+    def condition_prompts(self):
+        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
         zero_out_negative_conditioning = ConditioningZeroOut(self.negative_conditioning)
         negative_conditioning1 = ConditioningSetTimestepRange(zero_out_negative_conditioning, 0.1, 1)
         negative_conditioning2 = ConditioningSetTimestepRange(self.negative_conditioning, 0, 0.1)
         self.negative_conditioning = ConditioningCombine(negative_conditioning1, negative_conditioning2)
 
-    def sample(self, seed: int, num_samples: int, cfg_scale: float, sampler_name: str, scheduler: str, denoise_strength: float = 1, use_ays: bool = False):
+    def sample(self, use_ays: bool = False):
         self.model = ModelSamplingSD3(self.model, 3)
-        super().sample(seed, num_samples, cfg_scale, sampler_name, scheduler, denoise_strength, use_ays)
+        super().sample(self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler, self.params.denoise_strength, use_ays)
 
 class FluxWorkflow(SDWorkflow):
-    def _load_model(self, model_name: str, clip_skip: int, loras: Optional[list[Lora]] = None, vae_name: Optional[str] = None, use_tensorrt: bool =False, tensorrt_model: str = None):
-        if model_name.endswith(".gguf"):
-            model = UnetLoaderGGUF(model_name)
-        elif "nf4" in model_name.lower():
-            model, _, _ = CheckpointLoaderNF4(model_name)
+    def _load_model(self):
+        if self.params.model.endswith(".gguf"):
+            model = UnetLoaderGGUF(self.params.model)
+        elif "nf4" in self.params.model.lower():
+            model, _, _ = CheckpointLoaderNF4(self.params.model)
         else:
-            model = LoadDiffusionModel(model_name)
+            model = LoadDiffusionModel(self.params.model)
         clip_model = CLIPLoaderGGUF.clip_name.t5xxl_gguf if any(value.name.lower().endswith("gguf") for value in CLIPLoaderGGUF.clip_name) else CLIPs.t5xxl_fp16
         clip = DualCLIPLoaderGGUF(clip_model, CLIPs.clip_l, DualCLIPLoader.type.flux)
-        if loras:
-            for lora in loras:
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        if vae_name is not None:
-            vae = VAELoader(vae_name)
+        if self.params.vae is not None:
+            vae = VAELoader(self.params.vae)
         else:
             vae = VAELoader("ae.sft")
         self.model = model
         self.clip = clip
         self.vae = vae
 
-    def sample(self, seed: int, num_samples: int, cfg_scale: float, sampler_name: str, scheduler: str, denoise_strength: float = 1, use_ays: bool = False):
-        self.conditioning = FluxGuidance(self.conditioning, cfg_scale)
-        noise = RandomNoise(seed)
+    def sample(self, use_ays: bool = False):
+        self.conditioning = FluxGuidance(self.conditioning, self.params.cfg_scale)
+        noise = RandomNoise(self.params.seed)
         guider = BasicGuider(self.model, self.conditioning)
-        sampler = KSamplerSelect(sampler_name)
-        sigmas = BasicScheduler(self.model, scheduler, num_samples, denoise_strength)
+        sampler = KSamplerSelect(self.params.sampler)
+        sigmas = BasicScheduler(self.model, self.params.scheduler, self.params.num_steps, self.params.denoise_strength)
         self.output_latents, _ = SamplerCustomAdvanced(noise, guider, sampler, sigmas, self.latents[0])
 
-    def unclip_encode(self, image_input: list[Image], params):
+    def unclip_encode(self, image_input: list[Image]):
         self.clip_vision = CLIPVisionLoader(CLIPVisions.sigclip_vision_patch14_384)
 
         style_model = StyleModelLoader(StyleModels.flux1_redux_dev)
 
         for i, input in enumerate(image_input):
-            mashup_strength = params.mashup_image_strength if i == 0 else params.mashup_inputimage_strength
+            mashup_strength = self.params.mashup_image_strength if i == 0 else self.params.mashup_inputimage_strength
             if input is None:
                 continue
 

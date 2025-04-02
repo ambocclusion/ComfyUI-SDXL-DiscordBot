@@ -305,6 +305,8 @@ async def do_workflow(params: ImageWorkflow, interaction: discord.Interaction):
                 if params.cfg_scale < 1.2:
                     params.cfg_scale = 4.0
 
+            params.lora_dict = loras
+
             if params.use_llm is True:
                 enhanced_prompt = process_prompt_with_llm(params.prompt, params.seed, params.llm_profile)
                 prompt_result = await IFDisplayText(enhanced_prompt)
