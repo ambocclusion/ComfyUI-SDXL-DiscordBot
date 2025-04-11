@@ -169,7 +169,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         if image_wan_teacache == "true":
             # Is it a wan fun model?
             if params.model.find("fun"):
-                model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.15, 3)
+                model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.05, 3)
             else:
                 # Assume model is wan i2v 480p 14B 
                 model = TeaCache(model, 'wan2.1_i2v_480p_14B_ret_mode', 0.3, 3)
@@ -206,7 +206,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
         else:
             model = UNETLoader(params.model)
         if t2v_wan_teacache == "true":
-            model = TeaCache(model, 'wan2.1_t2v_1.3B', 0.08, 3)
+            model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.15, 3)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
