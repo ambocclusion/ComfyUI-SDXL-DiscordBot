@@ -167,11 +167,17 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         else:
             model = UNETLoader(params.model)
         if image_wan_teacache == "true":
-            model = TeaCache(model, 'wan2.1_i2v_480p_14B', 0.26, 3)
+            # Is it a wan fun model?
+            if params.model.find("fun"):
+                model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.05, 3)
+            else:
+                # Assume model is wan i2v 480p 14B 
+                model = TeaCache(model, 'wan2.1_i2v_480p_14B_ret_mode', 0.3, 3)
             if image_wan_triton == "true":
                 model = CompileModel(model, 'default', 'inductor', False, False)
         model = ModelSamplingSD3(model, 8)
-        clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
+        clip_model = CLIPLoaderGGUF.clip_name.umt5_xxl_encoder_Q6_K_gguf
+        clip = CLIPLoaderGGUF(clip_model, "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         clip_vision = CLIPVisionLoader('CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors')
         positive = CLIPTextEncode(params.prompt, clip)
@@ -200,7 +206,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
         else:
             model = UNETLoader(params.model)
         if t2v_wan_teacache == "true":
-            model = TeaCache(model, 'wan2.1_t2v_1.3B', 0.08, 3)
+            model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.15, 3)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
@@ -208,7 +214,8 @@ async def _do_wan(params: ImageWorkflow, interaction):
             model = CompileModel(model, 'default', 'inductor', False, False)
             if t2v_wan_distilled == "true":
                 model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
-        clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
+        clip_model = CLIPLoaderGGUF.clip_name.umt5_xxl_encoder_Q6_K_gguf
+        clip = CLIPLoaderGGUF(clip_model, "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
