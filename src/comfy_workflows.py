@@ -214,7 +214,8 @@ async def _do_wan(params: ImageWorkflow, interaction):
             model = CompileModel(model, 'default', 'inductor', False, False)
             if t2v_wan_distilled == "true":
                 model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
-        clip = CLIPLoader("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan")
+        clip_model = CLIPLoaderGGUF.clip_name.umt5_xxl_encoder_Q6_K_gguf
+        clip = CLIPLoaderGGUF(clip_model, "wan")
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
