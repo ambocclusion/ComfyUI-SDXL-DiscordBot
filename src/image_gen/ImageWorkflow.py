@@ -73,6 +73,8 @@ class ImageWorkflow:
     llm_profile: Optional[str] = None
     use_align_your_steps: Optional[bool] = None
     use_tensorrt : Optional[bool] = None
-    tensorrt_model: Optional[str] = None,
-    mashup_image_strength: Optional[float] = None,
+    tensorrt_model: Optional[str] = None
+    mashup_image_strength: Optional[float] = None
     mashup_inputimage_strength: Optional[float] = None
+    video_width: Optional[int] = None
+    video_length: Optional[int] = None

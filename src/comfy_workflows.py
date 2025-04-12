@@ -1,5 +1,6 @@
 import configparser
 import os
+from math import floor
 
 import PIL
 import discord
@@ -7,6 +8,8 @@ import asyncio
 
 from PIL import Image
 
+from src.comfy_script.runtime import *
+from src.comfy_script.runtime.nodes import *
 from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
 from src.image_gen.ImageWorkflow import *
 from src.image_gen.nsfw_detection import check_nsfw
@@ -140,7 +143,6 @@ async def _do_svd(params: ImageWorkflow, interaction):
     final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
     return [final_video]
 
-
 async def _do_image_wan(params: ImageWorkflow, interaction):
     import PIL
     max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
@@ -178,7 +180,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
             if "fun" in params.model:
                 model = TeaCache(model, 'wan2.1_t2v_1.3B_ret_mode', 0.05, 3)
             else:
-                # Assume model is wan i2v 480p 14B 
+                # Assume model is wan i2v 480p 14B
                 model = TeaCache(model, 'wan2.1_i2v_480p_14B_ret_mode', 0.3, 3)
             if image_wan_triton == "true":
                 model = CompileModel(model, 'default', 'inductor', False, False)
@@ -188,7 +190,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         positive = CLIPTextEncode(params.prompt, clip)
         negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
         clip_vision_output = CLIPVisionEncode(clip_vision, image)
-        positive, negative, latent = WanImageToVideo(positive, negative, vae, new_width, new_height, 32, 1, clip_vision_output, image)
+        positive, negative, latent = WanImageToVideo(positive, negative, vae, new_width, new_height, params.video_length, 1, clip_vision_output, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
@@ -229,14 +231,17 @@ async def _do_wan(params: ImageWorkflow, interaction):
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
-        latent = EmptyHunyuanLatentVideo(width=640, height=480, length=32)
+        aspect_ratio = 1.333
+        width = params.video_width
+        height = floor(width / aspect_ratio)
+        latent = EmptyHunyuanLatentVideo(width=width, height=height, length=params.video_length)
         if t2v_wan_distilled == "true":
             latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
             latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
+        video = VHSVideoCombine(image2, 16, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await video._wait()
     results = video.wait()._output

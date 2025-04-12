@@ -55,6 +55,8 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         get_default_from_config(section, "TENSORRT_MODEL"),
         float(get_default_from_config(section, "MASHUP_IMAGE1_STRENGTH", 1.0)),
         float(get_default_from_config(section, "MASHUP_IMAGE2_STRENGTH", 1.0)) ,
+        float(get_default_from_config(section, "VIDEO_WIDTH", 640)),
+        float(get_default_from_config(section, "VIDEO_LENGTH", 32)),
     )
     return workflow
 
