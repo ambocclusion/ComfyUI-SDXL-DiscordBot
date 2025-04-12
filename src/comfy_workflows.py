@@ -8,8 +8,6 @@ import asyncio
 
 from PIL import Image
 
-from src.comfy_script.runtime import *
-from src.comfy_script.runtime.nodes import *
 from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
 from src.image_gen.ImageWorkflow import *
 from src.image_gen.nsfw_detection import check_nsfw
