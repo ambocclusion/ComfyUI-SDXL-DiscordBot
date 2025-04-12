@@ -134,6 +134,7 @@ class ImageGenCommands:
             
         @self.tree.command(name="video", description="Generate a video based on a prompt")
         @app_commands.describe(**VIDEO_ARG_DESCS)
+        @app_commands.choices(**VIDEO_ARG_CHOICES)
         async def slash_command(
             interaction: discord.Interaction,
             prompt: str,
@@ -141,6 +142,7 @@ class ImageGenCommands:
             cfg_scale: Range[float, 1.0, MAX_CFG] = None,
             input_file: Attachment = None,
             seed: int = None,
+            lora: Choice[str] = None,
         ):
             if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
@@ -154,7 +156,9 @@ class ImageGenCommands:
                 WorkflowType.wan if input_file == None else WorkflowType.image_wan,
                 prompt,
                 negative_prompt,
-                model=WAN_GENERATION_DEFAULTS.model if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.model,
+                WAN_GENERATION_DEFAULTS.model if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.model,
+                unpack_choices(lora, None),
+                [1.0, 1.0],
                 num_steps=WAN_GENERATION_DEFAULTS.num_steps if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.num_steps,
                 cfg_scale=cfg_scale or WAN_GENERATION_DEFAULTS.cfg_scale,
                 seed=seed,
@@ -164,7 +168,7 @@ class ImageGenCommands:
                 fps=WAN_GENERATION_DEFAULTS.fps if input_file == None else IMAGE_WAN_GENERATION_DEFAULTS.fps,
                 filename=await process_attachment(input_file, interaction) if input_file != None else None,
                 style_prompt = WAN_GENERATION_DEFAULTS.style_prompt,
-                negative_style_prompt = WAN_GENERATION_DEFAULTS.negative_style_prompt
+                negative_style_prompt = WAN_GENERATION_DEFAULTS.negative_style_prompt,
             )
             await self._do_request(
                 interaction,

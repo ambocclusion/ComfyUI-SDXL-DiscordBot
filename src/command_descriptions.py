@@ -54,6 +54,7 @@ SD3_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m i
 SD3_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "sd3")]
 FLUX_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "flux")]
 FLUX_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "flux")]
+VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "wan")]
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
 SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
@@ -114,7 +115,8 @@ VIDEO_ARG_DESCS = {
     "prompt": "Prompt for the video being generated",
     "negative_prompt": "Prompt for what you want to steer the AI away from",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
-    "input_file": "Image to use as input"
+    "input_file": "Image to use as input",
+    "lora": "LoRA to apply",
 }
 CASCADE_ARG_DESCS = {
     **BASE_ARG_DESCS,
@@ -179,7 +181,9 @@ FLUX_ARG_CHOICES = {
     "lora2": FLUX_LORA_CHOICES[:25],
     **BASE_ARG_CHOICES,
 }
-VIDEO_ARG_CHOICES = {k: v for k, v in IMAGINE_ARG_CHOICES.items() if k not in {"lora2", "lora3", "aspect_ratio"}}
+VIDEO_ARG_CHOICES = {
+    "lora": VIDEO_LORA_CHOICES[:25],
+}
 
 PONY_ARG_CHOICES = {
     "model": PONY_MODEL_CHOICES[:25],
