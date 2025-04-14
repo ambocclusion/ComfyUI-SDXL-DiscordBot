@@ -184,7 +184,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
                 model = CompileModel(model, 'default', 'inductor', False, False)
         model = ModelSamplingSD3(model, 8)
         vae = VAELoader("wan_2.1_vae.safetensors")
-        clip_vision = CLIPVisionLoader('CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors')
+        clip_vision = CLIPVisionLoader('clip_vision_h.safetensors')
         positive = CLIPTextEncode(params.prompt, clip)
         negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
         clip_vision_output = CLIPVisionEncode(clip_vision, image)
