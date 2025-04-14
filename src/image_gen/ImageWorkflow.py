@@ -72,7 +72,9 @@ class ImageWorkflow:
     use_llm: Optional[bool] = None
     llm_profile: Optional[str] = None
     use_align_your_steps: Optional[bool] = None
-    use_tensorrt : Optional[bool] = None
+    use_teacache: Optional[bool] = None
+    use_triton: Optional[bool] = None
+    use_tensorrt: Optional[bool] = None
     tensorrt_model: Optional[str] = None
     mashup_image_strength: Optional[float] = None
     mashup_inputimage_strength: Optional[float] = None

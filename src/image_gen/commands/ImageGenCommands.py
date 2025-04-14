@@ -394,6 +394,8 @@ class SDXLCommand(ImageGenCommands):
                 detailing_controlnet=defaults.detailing_controlnet,
                 use_llm=use_llm or (bool(config["LLM"]["use_llm"]) and self.command_name == "imagine"),
                 use_align_your_steps=bool(defaults.use_align_your_steps),
+                use_teacache=bool(defaults.use_teacache),
+                use_triton=bool(defaults.use_triton),
                 use_tensorrt=defaults.use_tensorrt or False,
                 tensorrt_model=defaults.tensorrt_model,
                 mashup_image_strength=mashup_image_strength,

@@ -51,6 +51,8 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         bool(get_default_from_config(section, "USE_LLM_BY_DEFAULT", False)),
         get_default_from_config(section, "LLM_PROFILE"),
         bool(get_default_from_config(section, "USE_ALIGN_YOUR_STEPS", False)),
+        bool(get_default_from_config(section, "USE_TEACACHE", False)),
+        bool(get_default_from_config(section, "USE_TRITON", False)),
         bool(get_default_from_config(section, "USE_TENSORRT", False)),
         get_default_from_config(section, "TENSORRT_MODEL"),
         float(get_default_from_config(section, "MASHUP_IMAGE1_STRENGTH", 1.0)),
