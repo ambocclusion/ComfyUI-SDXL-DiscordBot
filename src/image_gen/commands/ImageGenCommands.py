@@ -20,84 +20,18 @@ class ImageGenCommands:
         self.tree = tree
 
     def add_commands(self):
-        @self.tree.command(name="legacy", description="Generate an image based on input text")
-        @app_commands.describe(**IMAGINE_ARG_DESCS)
-        @app_commands.choices(**IMAGINE_ARG_CHOICES)
-        async def slash_command(
-            interaction: discord.Interaction,
-            prompt: str,
-            negative_prompt: str = None,
-            model: str = None,
-            lora: Choice[str] = None,
-            lora_strength: float = 1.0,
-            lora2: Choice[str] = None,
-            lora_strength2: float = 1.0,
-            aspect_ratio: str = None,
-            sampler: str = None,
-            scheduler: str = None,
-            num_steps: Range[int, 1, MAX_STEPS] = None,
-            cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-            seed: int = None,
-            input_file: Attachment = None,
-            denoise_strength: Range[float, 0.01, 1.0] = None,
-            inpainting_prompt: str = None,
-            inpainting_detection_threshold: Range[int, 0, 255] = None,
-            clip_skip: Range[int, -2, -1] = None,
-            use_llm: Optional[bool] = None,
-        ):
-            if input_file is not None:
-                fp = await process_attachment(input_file, interaction)
-                if fp is None:
-                    return
-
-            dimensions = sd_aspect_ratios[aspect_ratio] if aspect_ratio else sd_aspect_ratios[SD15_GENERATION_DEFAULTS.dimensions]
-            dimensions = (dimensions[0] / 2, dimensions[1] / 2)
-
-            params = ImageWorkflow(
-                ModelType.SD15,
-                WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
-                prompt,
-                negative_prompt,
-                model or SD15_GENERATION_DEFAULTS.model,
-                unpack_choices(lora, lora2),
-                [lora_strength, lora_strength2],
-                dimensions,
-                sampler or SD15_GENERATION_DEFAULTS.sampler,
-                num_steps or SD15_GENERATION_DEFAULTS.num_steps,
-                cfg_scale or SD15_GENERATION_DEFAULTS.cfg_scale,
-                seed=seed,
-                slash_command="legacy",
-                filename=fp if input_file is not None else None,
-                denoise_strength=denoise_strength or SD15_GENERATION_DEFAULTS.denoise_strength if input_file is not None else 1.0,
-                batch_size=SD15_GENERATION_DEFAULTS.batch_size,
-                inpainting_prompt=inpainting_prompt,
-                inpainting_detection_threshold=inpainting_detection_threshold or SD15_GENERATION_DEFAULTS.inpainting_detection_threshold,
-                clip_skip=clip_skip or SD15_GENERATION_DEFAULTS.clip_skip,
-                use_llm=use_llm or False,
-                scheduler=scheduler or SD15_GENERATION_DEFAULTS.scheduler,
-                use_tensorrt=SD15_GENERATION_DEFAULTS.use_tensorrt,
-                tensorrt_model=SD15_GENERATION_DEFAULTS.tensorrt_model,
-                use_accelerator_lora=SD15_GENERATION_DEFAULTS.use_accelerator_lora,
-            )
-            await self._do_request(
-                interaction,
-                f'🖼️ {interaction.user.mention} asked me to imagine "{prompt}"! {random.choice(generation_messages)} 🖼️',
-                f'{interaction.user.mention} asked me to imagine "{prompt}"! {random.choice(completion_messages)}',
-                "imagine",
-                params,
-            )
 
         @self.tree.command(name="svd", description="Generate a video based on an input image using StableVideoDiffusion")
         @app_commands.describe(**SVD_ARG_DESCS)
         # @app_commands.choices(**VIDEO_ARG_CHOICES)
         async def slash_command(
-            interaction: discord.Interaction,
-            input_file: Attachment,
-            cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-            min_cfg: Range[float, 1.0, MAX_CFG] = None,
-            motion: Range[int, 1, 127] = None,
-            augmentation: Range[float, 0, 10] = None,
-            seed: int = None,
+                interaction: discord.Interaction,
+                input_file: Attachment,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                min_cfg: Range[float, 1.0, MAX_CFG] = None,
+                motion: Range[int, 1, 127] = None,
+                augmentation: Range[float, 0, 10] = None,
+                seed: int = None,
         ):
             if input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
@@ -131,18 +65,18 @@ class ImageGenCommands:
                 "video",
                 params,
             )
-            
+
         @self.tree.command(name="video", description="Generate a video based on a prompt")
         @app_commands.describe(**VIDEO_ARG_DESCS)
         @app_commands.choices(**VIDEO_ARG_CHOICES)
         async def slash_command(
-            interaction: discord.Interaction,
-            prompt: str,
-            negative_prompt: str = None,
-            cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-            input_file: Attachment = None,
-            seed: int = None,
-            lora: Choice[str] = None,
+                interaction: discord.Interaction,
+                prompt: str,
+                negative_prompt: str = None,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                input_file: Attachment = None,
+                seed: int = None,
+                lora: Choice[str] = None,
         ):
             if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
@@ -182,77 +116,13 @@ class ImageGenCommands:
                 params,
             )
 
-        @self.tree.command(name="cascade", description="Use Stable Cascade to generate an image")
-        @app_commands.describe(**CASCADE_ARG_DESCS)
-        @app_commands.choices(**CASCADE_ARG_CHOICES)
-        async def slash_command(
-            interaction: discord.Interaction,
-            prompt: str,
-            negative_prompt: str = None,
-            lora: Choice[str] = None,
-            lora_strength: float = 1.0,
-            lora2: Choice[str] = None,
-            lora_strength2: float = 1.0,
-            aspect_ratio: str = None,
-            num_steps: Range[int, 1, MAX_STEPS] = None,
-            cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-            seed: int = None,
-            input_file: Attachment = None,
-            mashup_image: Attachment = None,
-            denoise_strength: Range[float, 0.01, 1.0] = None,
-            inpainting_prompt: str = None,
-            inpainting_detection_threshold: Range[int, 0, 255] = None,
-            clip_skip: Range[int, -2, -1] = None,
-            use_llm: Optional[bool] = None,
-        ):
-            if input_file is not None:
-                fp = await process_attachment(input_file, interaction)
-                if fp is None:
-                    return
-
-            if mashup_image is not None:
-                fp2 = await process_attachment(mashup_image, interaction)
-                if fp2 is None:
-                    return
-
-            params = ImageWorkflow(
-                ModelType.CASCADE,
-                WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
-                prompt,
-                negative_prompt,
-                CASCADE_GENERATION_DEFAULTS.model,
-                loras=unpack_choices(lora, lora2),
-                lora_strengths=[lora_strength, lora_strength2],
-                dimensions=sd_aspect_ratios[aspect_ratio] if aspect_ratio else sd_aspect_ratios[CASCADE_GENERATION_DEFAULTS.dimensions],
-                sampler=CASCADE_GENERATION_DEFAULTS.sampler,
-                num_steps=num_steps or CASCADE_GENERATION_DEFAULTS.num_steps,
-                cfg_scale=cfg_scale or CASCADE_GENERATION_DEFAULTS.cfg_scale,
-                denoise_strength=denoise_strength or CASCADE_GENERATION_DEFAULTS.denoise_strength,
-                batch_size=CASCADE_GENERATION_DEFAULTS.batch_size,
-                seed=seed,
-                filename=fp if input_file is not None else None,
-                filename2=fp2 if mashup_image is not None else None,
-                inpainting_prompt=inpainting_prompt,
-                inpainting_detection_threshold=inpainting_detection_threshold or CASCADE_GENERATION_DEFAULTS.inpainting_detection_threshold,
-                clip_skip=clip_skip or CASCADE_GENERATION_DEFAULTS.clip_skip,
-                use_llm=use_llm or False,
-            )
-
-            await self._do_request(
-                interaction,
-                f'🤖️ {interaction.user.mention} asked me to imagine "{prompt}" using Stable Cascade! {random.choice(generation_messages)} 🤖️',
-                f'🤖️ {interaction.user.mention} asked me to imagine "{prompt}" using Stable Cascade! {random.choice(completion_messages)} 🤖️',
-                "cascade",
-                params,
-            )
-
     async def _do_request(
-        self,
-        interaction: discord.Interaction,
-        intro_message: str,
-        completion_message: str,
-        command_name: str,
-        params: ImageWorkflow,
+            self,
+            interaction: discord.Interaction,
+            intro_message: str,
+            completion_message: str,
+            command_name: str,
+            params: ImageWorkflow,
     ):
         await interaction.response.defer()
 
@@ -300,7 +170,7 @@ class ImageGenCommands:
             is_nsfw = False
             if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
                 is_nsfw = check_nsfw(collage_path, params.prompt)
-            
+
             buttons = Buttons(params, images, interaction.user, is_nsfw, command=command_name)
 
             await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
@@ -322,32 +192,32 @@ class SDXLCommand(ImageGenCommands):
         @app_commands.describe(**self.command_descs)
         @app_commands.choices(**self.command_choices)
         async def slash_command(
-            interaction: discord.Interaction,
-            prompt: str,
-            negative_prompt: str = None,
-            model: str = None,
-            lora: Choice[str] = None,
-            lora_strength: float = 1.0,
-            lora2: Choice[str] = None,
-            lora_strength2: float = 1.0,
-            aspect_ratio: str = None,
-            sampler: str = None,
-            scheduler: str = None,
-            num_steps: Range[int, 1, MAX_STEPS] = None,
-            cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-            seed: int = None,
-            input_file: Attachment = None,
-            mashup_image: Attachment = None,
-            denoise_strength: Range[float, 0.01, 1.0] = None,
-            inpainting_prompt: str = None,
-            inpainting_detection_threshold: Range[int, 0, 255] = None,
-            clip_skip: Range[int, -2, -1] = None,
-            use_accelerator_lora: Optional[bool] = None,
-            style_prompt: Optional[str] = None,
-            negative_style_prompt: Optional[str] = None,
-            use_llm: Optional[bool] = None,
-            mashup_image_strength: Optional[float] = None,
-            mashup_inputimage_strength: Optional[float] = None
+                interaction: discord.Interaction,
+                prompt: str,
+                negative_prompt: str = None,
+                model: str = None,
+                lora: Choice[str] = None,
+                lora_strength: float = 1.0,
+                lora2: Choice[str] = None,
+                lora_strength2: float = 1.0,
+                aspect_ratio: str = None,
+                sampler: str = None,
+                scheduler: str = None,
+                num_steps: Range[int, 1, MAX_STEPS] = None,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                seed: int = None,
+                input_file: Attachment = None,
+                mashup_image: Attachment = None,
+                denoise_strength: Range[float, 0.01, 1.0] = None,
+                inpainting_prompt: str = None,
+                inpainting_detection_threshold: Range[int, 0, 255] = None,
+                clip_skip: Range[int, -2, -1] = None,
+                use_accelerator_lora: Optional[bool] = None,
+                style_prompt: Optional[str] = None,
+                negative_style_prompt: Optional[str] = None,
+                use_llm: Optional[bool] = None,
+                mashup_image_strength: Optional[float] = None,
+                mashup_inputimage_strength: Optional[float] = None
         ):
             if input_file is not None:
                 fp = await process_attachment(input_file, interaction)
@@ -362,26 +232,26 @@ class SDXLCommand(ImageGenCommands):
             defaults = COMMAND_DEFAULTS[self.command_name]
 
             params = ImageWorkflow(
-                self.model_type,
-                WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
-                prompt,
-                negative_prompt,
-                model or defaults.model,
-                unpack_choices(lora, lora2),
-                [lora_strength, lora_strength2],
+                model_type=self.model_type,
+                workflow_type=WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                model=model or defaults.model,
+                loras=unpack_choices(lora, lora2),
+                lora_strengths=[lora_strength, lora_strength2],
                 dimensions=sd_aspect_ratios[aspect_ratio] if aspect_ratio else sd_aspect_ratios[defaults.dimensions],
-                batch_size=defaults.batch_size,
                 sampler=sampler or defaults.sampler,
                 num_steps=num_steps or defaults.num_steps,
                 cfg_scale=cfg_scale or defaults.cfg_scale,
-                seed=seed,
-                slash_command=self.command_name,
-                filename=fp if input_file is not None else None,
-                filename2=fp2 if mashup_image is not None else None,
                 denoise_strength=denoise_strength or defaults.denoise_strength if input_file is not None else 1.0,
+                batch_size=defaults.batch_size,
+                seed=seed,
+                filename=fp if input_file is not None else None,
+                slash_command=self.command_name,
                 inpainting_prompt=inpainting_prompt,
                 inpainting_detection_threshold=inpainting_detection_threshold or defaults.inpainting_detection_threshold,
                 clip_skip=clip_skip or defaults.clip_skip,
+                filename2=fp2 if mashup_image is not None else None,
                 use_accelerator_lora=use_accelerator_lora or defaults.use_accelerator_lora,
                 accelerator_lora_name=(
                     defaults.accelerator_lora_name
@@ -391,6 +261,7 @@ class SDXLCommand(ImageGenCommands):
                 scheduler=scheduler or defaults.scheduler,
                 style_prompt=style_prompt or defaults.style_prompt,
                 negative_style_prompt=negative_style_prompt or defaults.negative_style_prompt,
+                vae=None,
                 detailing_controlnet=defaults.detailing_controlnet,
                 use_llm=use_llm or (bool(config["LLM"]["use_llm"]) and self.command_name == "imagine"),
                 use_align_your_steps=bool(defaults.use_align_your_steps),
@@ -418,12 +289,14 @@ class PonyXLCommand(SDXLCommand):
         self.command_choices = PONY_ARG_CHOICES
         self.model_type = ModelType.PONY
 
+
 class SD3Command(SDXLCommand):
     def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
         super().__init__(tree, "sd3")
         self.command_descs = SD3_ARG_DESCS
         self.command_choices = SD3_ARG_CHOICES
         self.model_type = ModelType.SD3
+
 
 class FluxCommand(SDXLCommand):
     def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
@@ -432,9 +305,26 @@ class FluxCommand(SDXLCommand):
         self.command_choices = FLUX_ARG_CHOICES
         self.model_type = ModelType.FLUX
 
+
 class ImagineCommand(SDXLCommand):
     def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
         super().__init__(tree, "imagine")
         self.command_descs = FLUX_ARG_DESCS
         self.command_choices = FLUX_ARG_CHOICES
         self.model_type = ModelType.FLUX
+
+
+class CascadeCommand(SDXLCommand):
+    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+        super().__init__(tree, "cascade")
+        self.command_descs = CASCADE_ARG_DESCS
+        self.command_choices = CASCADE_ARG_CHOICES
+        self.model_type = ModelType.CASCADE
+
+
+class LegacyCommand(SDXLCommand):
+    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+        super().__init__(tree, "legacy")
+        self.command_descs = LEGACY_ARG_DESCS
+        self.command_choices = LEGACY_ARG_CHOICES
+        self.model_type = ModelType.SD15

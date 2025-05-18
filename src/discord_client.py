@@ -23,9 +23,10 @@ async def on_ready():
 
     await asyncio.sleep(1)
     print("server start")
-    from src.image_gen.commands.ImageGenCommands import ImageGenCommands, SDXLCommand, FluxCommand, ImagineCommand
+    from src.image_gen.commands.ImageGenCommands import ImageGenCommands, SDXLCommand, ImagineCommand, LegacyCommand
     commands = []
     commands.append(ImageGenCommands(tree))
+    commands.append(LegacyCommand(tree, "legacy"))
     commands.append(SDXLCommand(tree, "sdxl"))
     commands.append(ImagineCommand(tree, "imagine"))
     from src.command_descriptions import PONY_ARG_CHOICES

@@ -85,7 +85,7 @@ IMAGE_GEN_DESCS = {
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "scheduler": "Changes which noise scheduler applies to the image. Use in conjunction with sampler",
 }
-IMAGINE_ARG_DESCS = {
+LEGACY_ARG_DESCS = {
     **BASE_ARG_DESCS,
     **IMAGE_GEN_DESCS,
     "num_steps": "Number of sampling steps; range [1, 30]",
@@ -152,7 +152,7 @@ BASE_ARG_CHOICES = {
     "sampler": SAMPLER_CHOICES[:25],
     "scheduler": SCHEDULER_CHOICES[:25]
 }
-IMAGINE_ARG_CHOICES = {
+LEGACY_ARG_CHOICES = {
     "model": SD15_MODEL_CHOICES[:25],
     "lora": SD15_LORA_CHOICES[:25],
     "lora2": SD15_LORA_CHOICES[:25],
