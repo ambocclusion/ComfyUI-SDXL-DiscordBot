@@ -41,6 +41,7 @@ DETAILING_CONTROLNET=XL/controlllite_xl_tile_realistic.safetensors
 LLM_PROFILE=IF_PromptMKR
 USE_TENSORRT=False
 TENSORRT_MODEL=
+CONTROLNET_MODEL=xl/controlnet-union-sdxl.safetensors
 
 [SD15_GENERATION_DEFAULTS]
 MODEL=rundiffusionFX_v10.safetensors
@@ -98,6 +99,7 @@ DEFAULT_NEGATIVE_STYLE_PROMPT=worst quality, bad quality, low quality, deformed,
 VAE=pony/pony_vae.safetensors
 DETAILING_CONTROLNET=pony/bdsqlsz_controlllite_xl_tile_anime.safetensors
 LLM_PROFILE=IF_PromptMKR_IMG
+CONTROLNET_MODEL=xl/controlnet-union-sdxl.safetensors
 
 [SD3_GENERATION_DEFAULTS]
 MODEL=sd3/sd3_medium.safetensors
@@ -142,6 +144,7 @@ USE_TENSORRT=False
 TENSORRT_MODEL=
 MASHUP_IMAGE1_STRENGTH=1
 MASHUP_IMAGE2_STRENGTH=1
+CONTROLNET_MODEL=flux/FLUX-controlnet-Union-Pro.safetensors
 
 [WAN_GENERATION_DEFAULTS]
 MODEL=Wan2_1_T2V_1_3B_fp16.safetensors
