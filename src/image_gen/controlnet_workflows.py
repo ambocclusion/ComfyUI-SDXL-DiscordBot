@@ -56,7 +56,7 @@ class CannyControlnetWorkflow(ControlnetWorkflow):
         if image is None:
             print("Error: No image provided for ControlNet preprocessing")
             return None
-        return Canny(image)
+        return Canny(image, low_threshold=0.15, high_threshold=0.3)
 
 
 class DepthControlnetWorkflow(ControlnetWorkflow):
@@ -68,4 +68,4 @@ class DepthControlnetWorkflow(ControlnetWorkflow):
         if image is None:
             print("Error: No image provided for ControlNet preprocessing")
             return None
-        return ZoeDepthMapPreprocessor(image, 512)
+        return ZoeDepthMapPreprocessor(image, resolution=512)
