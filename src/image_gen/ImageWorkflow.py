@@ -29,6 +29,11 @@ sd_aspect_ratios = {
     "16:9 landscape": (1344, 768),
 }
 
+class ControlnetTypes(Enum):
+    pose = "pose",
+    canny = "canny",
+    depth = "depth",
+
 @dataclass
 class ImageWorkflow:
     model_type: ModelType
@@ -80,3 +85,8 @@ class ImageWorkflow:
     mashup_inputimage_strength: Optional[float] = None
     video_width: Optional[int] = None
     video_length: Optional[int] = None
+    controlnet_model: Optional[str] = None
+    controlnet_type: Optional[ControlnetTypes] = None
+    controlnet_strength: Optional[float] = None
+    controlnet_start_percent: Optional[float] = None
+    controlnet_end_percent: Optional[float] = None

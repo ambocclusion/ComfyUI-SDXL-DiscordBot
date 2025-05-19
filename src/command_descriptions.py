@@ -58,6 +58,8 @@ VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l 
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
 SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
+CONTROLNET_CHOICES = [Choice(name="pose", value="pose"), Choice(name="canny", value="canny"), Choice(name="depth", value="depth")]
+
 COMMAND_MODEL_CHOICES = {
     "sdxl": SDXL_MODEL_CHOICES,
     "legacy": SD15_MODEL_CHOICES,
@@ -75,15 +77,22 @@ BASE_ARG_DESCS = {
     "prompt": "Prompt for the image being generated",
     "negative_prompt": "Prompt for what you want to steer the AI away from",
 }
+
+CONTROLNET_ARG_DESCS = {
+    "controlnet_type": "Controlnet type to use",
+    "controlnet_strength": f"range [0.0, 1.0]; Strength of controlnet",
+    "controlnet_start_percent": f"range [0.0, 1.0]; How many steps to wait before applying controlnet",
+    "controlnet_end_percent": f"range [0.0, 1.0]; How many steps to wait before stopping controlnet",
+}
+
 IMAGE_GEN_DESCS = {
     "model": "Model checkpoint to use",
     "lora": "LoRA to apply",
     "lora_strength": "Strength of LoRA",
     "aspect_ratio": "Aspect ratio of the generated image",
-    "sampler": "Sampling algorithm to use",
     "num_steps": f"range [1, {MAX_STEPS}]; Number of sampling steps",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
-    "scheduler": "Changes which noise scheduler applies to the image. Use in conjunction with sampler",
+    **CONTROLNET_ARG_DESCS,
 }
 LEGACY_ARG_DESCS = {
     **BASE_ARG_DESCS,
@@ -93,7 +102,6 @@ LEGACY_ARG_DESCS = {
     "denoise_strength": f"range [0.01, 1.0], default {SD15_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
     "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
     "inpainting_detection_threshold": f"range [0, 255], default {SD15_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-    "clip_skip": f"default: {SD15_GENERATION_DEFAULTS.clip_skip}",
 }
 SDXL_ARG_DESCS = {
     **BASE_ARG_DESCS,
@@ -102,7 +110,6 @@ SDXL_ARG_DESCS = {
     "denoise_strength": f"range [0.01, 1.0], default {SDXL_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
     "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
     "inpainting_detection_threshold": f"range [0, 255], default {SDXL_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-    "clip_skip": f"default: {SDXL_GENERATION_DEFAULTS.clip_skip}",
 }
 SVD_ARG_DESCS = {
     "input_file": "Starting image for video generation",
@@ -130,7 +137,6 @@ CASCADE_ARG_DESCS = {
     "denoise_strength": f"range [0.01, 1.0], default {CASCADE_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
     "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
     "inpainting_detection_threshold": f"range [0, 255], default {CASCADE_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-    "clip_skip": f"default: {CASCADE_GENERATION_DEFAULTS.clip_skip}",
 }
 
 PONY_ARG_DESCS = {
@@ -149,9 +155,9 @@ FLUX_ARG_DESCS = {
 
 BASE_ARG_CHOICES = {
     "aspect_ratio": ASPECT_RATIO_CHOICES[:25],
-    "sampler": SAMPLER_CHOICES[:25],
-    "scheduler": SCHEDULER_CHOICES[:25]
+    "controlnet_type": CONTROLNET_CHOICES,
 }
+
 LEGACY_ARG_CHOICES = {
     "model": SD15_MODEL_CHOICES[:25],
     "lora": SD15_LORA_CHOICES[:25],
@@ -162,7 +168,7 @@ SDXL_ARG_CHOICES = {
     "model": SDXL_MODEL_CHOICES[:25],
     "lora": SDXL_LORA_CHOICES[:25],
     "lora2": SDXL_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES,
+    **BASE_ARG_CHOICES
 }
 CASCADE_ARG_CHOICES = {
     "aspect_ratio": ASPECT_RATIO_CHOICES,
@@ -179,7 +185,7 @@ FLUX_ARG_CHOICES = {
     "model": FLUX_MODEL_CHOICES[:25],
     "lora": FLUX_LORA_CHOICES[:25],
     "lora2": FLUX_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES,
+    **BASE_ARG_CHOICES
 }
 VIDEO_ARG_CHOICES = {
     "lora": VIDEO_LORA_CHOICES[:25],

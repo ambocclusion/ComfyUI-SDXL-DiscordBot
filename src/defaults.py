@@ -59,6 +59,11 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         float(get_default_from_config(section, "MASHUP_IMAGE2_STRENGTH", 1.0)) ,
         float(get_default_from_config(section, "VIDEO_WIDTH", 640)),
         float(get_default_from_config(section, "VIDEO_LENGTH", 32)),
+        get_default_from_config(section, "CONTROLNET_MODEL"),
+        float(get_default_from_config(section, "CONTROLNET_STRENGTH", 1.0)),
+        None,
+        float(get_default_from_config(section, "CONTROLNET_START_PERCENT", 0.0)),
+        float(get_default_from_config(section, "CONTROLNET_END_PERCENT", 1.0)),
     )
     return workflow
 

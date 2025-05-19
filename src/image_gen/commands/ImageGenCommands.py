@@ -201,8 +201,6 @@ class SDXLCommand(ImageGenCommands):
                 lora2: Choice[str] = None,
                 lora_strength2: float = 1.0,
                 aspect_ratio: str = None,
-                sampler: str = None,
-                scheduler: str = None,
                 num_steps: Range[int, 1, MAX_STEPS] = None,
                 cfg_scale: Range[float, 1.0, MAX_CFG] = None,
                 seed: int = None,
@@ -211,13 +209,15 @@ class SDXLCommand(ImageGenCommands):
                 denoise_strength: Range[float, 0.01, 1.0] = None,
                 inpainting_prompt: str = None,
                 inpainting_detection_threshold: Range[int, 0, 255] = None,
-                clip_skip: Range[int, -2, -1] = None,
-                use_accelerator_lora: Optional[bool] = None,
                 style_prompt: Optional[str] = None,
                 negative_style_prompt: Optional[str] = None,
                 use_llm: Optional[bool] = None,
                 mashup_image_strength: Optional[float] = None,
-                mashup_inputimage_strength: Optional[float] = None
+                mashup_inputimage_strength: Optional[float] = None,
+                controlnet_type: Optional[str] = None,
+                controlnet_strength: Optional[float] = None,
+                controlnet_start_percent: Optional[float] = None,
+                controlnet_end_percent: Optional[float] = None,
         ):
             if input_file is not None:
                 fp = await process_attachment(input_file, interaction)
@@ -233,14 +233,14 @@ class SDXLCommand(ImageGenCommands):
 
             params = ImageWorkflow(
                 model_type=self.model_type,
-                workflow_type=WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
+                workflow_type=WorkflowType.txt2img if input_file is None or controlnet_type is not None else WorkflowType.img2img,
                 prompt=prompt,
                 negative_prompt=negative_prompt,
                 model=model or defaults.model,
                 loras=unpack_choices(lora, lora2),
                 lora_strengths=[lora_strength, lora_strength2],
                 dimensions=sd_aspect_ratios[aspect_ratio] if aspect_ratio else sd_aspect_ratios[defaults.dimensions],
-                sampler=sampler or defaults.sampler,
+                sampler=defaults.sampler,
                 num_steps=num_steps or defaults.num_steps,
                 cfg_scale=cfg_scale or defaults.cfg_scale,
                 denoise_strength=denoise_strength or defaults.denoise_strength if input_file is not None else 1.0,
@@ -250,15 +250,15 @@ class SDXLCommand(ImageGenCommands):
                 slash_command=self.command_name,
                 inpainting_prompt=inpainting_prompt,
                 inpainting_detection_threshold=inpainting_detection_threshold or defaults.inpainting_detection_threshold,
-                clip_skip=clip_skip or defaults.clip_skip,
+                clip_skip=defaults.clip_skip,
                 filename2=fp2 if mashup_image is not None else None,
-                use_accelerator_lora=use_accelerator_lora or defaults.use_accelerator_lora,
+                use_accelerator_lora=defaults.use_accelerator_lora,
                 accelerator_lora_name=(
                     defaults.accelerator_lora_name
-                    if use_accelerator_lora or (use_accelerator_lora is None and defaults.use_accelerator_lora)
+                    if defaults.use_accelerator_lora
                     else None
                 ),
-                scheduler=scheduler or defaults.scheduler,
+                scheduler=defaults.scheduler,
                 style_prompt=style_prompt or defaults.style_prompt,
                 negative_style_prompt=negative_style_prompt or defaults.negative_style_prompt,
                 vae=None,
@@ -270,7 +270,12 @@ class SDXLCommand(ImageGenCommands):
                 use_tensorrt=defaults.use_tensorrt or False,
                 tensorrt_model=defaults.tensorrt_model,
                 mashup_image_strength=mashup_image_strength,
-                mashup_inputimage_strength=mashup_inputimage_strength
+                mashup_inputimage_strength=mashup_inputimage_strength,
+                controlnet_model=defaults.controlnet_model,
+                controlnet_type=controlnet_type,
+                controlnet_strength=controlnet_strength or defaults.controlnet_strength,
+                controlnet_start_percent=controlnet_start_percent or defaults.controlnet_start_percent,
+                controlnet_end_percent=controlnet_end_percent or defaults.controlnet_end_percent,
             )
 
             await self._do_request(
