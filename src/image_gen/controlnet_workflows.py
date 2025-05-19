@@ -1,6 +1,6 @@
 from comfy_script.runtime import *
 
-from src.comfy_script.runtime.nodes import *
+from comfy_script.runtime.nodes import *
 from src.image_gen.ImageWorkflow import ImageWorkflow
 from src.util import get_server_address
 
