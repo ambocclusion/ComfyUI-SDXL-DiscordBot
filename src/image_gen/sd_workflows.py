@@ -138,7 +138,7 @@ class PonyWorkflow(SDXLWorkflow):
     def condition_prompts(self):
         self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, self.params.prompt, self.params.prompt)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
-        if self.controlnet_workflow is not None and not self.params.filename:
+        if self.params.controlnet_type is not None and self.params.filename is not None:
             self.controlnet_image = LoadImage(self.params.filename)[0]
             self.conditioning, self.negative_conditioning = self.controlnet_workflow.do_conditioning(self.conditioning, self.negative_conditioning, self.controlnet_image, self.vae, self.params)
 
