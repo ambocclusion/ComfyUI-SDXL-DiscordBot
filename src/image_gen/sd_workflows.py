@@ -11,10 +11,11 @@ load(get_server_address())
 from comfy_script.runtime.nodes import *
 
 controlnet_workflows = {
-    ControlnetTypes.pose : PoseControlnetWorkflow,
-    ControlnetTypes.depth : DepthControlnetWorkflow,
-    ControlnetTypes.canny : CannyControlnetWorkflow,
+    ControlnetTypes.pose: PoseControlnetWorkflow,
+    ControlnetTypes.depth: DepthControlnetWorkflow,
+    ControlnetTypes.canny: CannyControlnetWorkflow,
 }
+
 
 @dataclasses.dataclass
 class Lora:
@@ -41,8 +42,8 @@ class SDWorkflow:
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         clip = CLIPSetLastLayer(clip, self.params.clip_skip)
-        if self.params.controlnet_type is not None and self.params.controlnet_model is not None:
-            self.controlnet_workflow = controlnet_workflows[ControlnetTypes[self.params.controlnet_type]](self.params)
+        if self.should_do_controlnet():
+            self.do_controlnet_workflow()
         self.model = model
         self.clip = clip
         self.vae = vae
@@ -70,9 +71,19 @@ class SDWorkflow:
     def condition_prompts(self):
         self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
-        if self.params.controlnet_type is not None and self.params.filename is not None:
-            self.controlnet_image = self.controlnet_workflow.do_preprocessing(self.controlnet_image)
-            self.conditioning, self.negative_conditioning = self.controlnet_workflow.do_conditioning(self.conditioning, self.negative_conditioning, self.controlnet_image, self.vae, self.params)
+        if self.should_do_controlnet():
+            self.do_controlnet_conditioning()
+
+    def do_controlnet_workflow(self):
+        self.controlnet_image = LoadImage(self.params.filename)[0]
+        self.controlnet_workflow = controlnet_workflows[ControlnetTypes[self.params.controlnet_type]](self.params)
+
+    def do_controlnet_conditioning(self):
+        self.controlnet_image = self.controlnet_workflow.do_preprocessing(self.controlnet_image)
+        self.conditioning, self.negative_conditioning = self.controlnet_workflow.do_conditioning(self.conditioning, self.negative_conditioning, self.controlnet_image, self.vae, self.params)
+
+    def should_do_controlnet(self):
+        return self.params.controlnet_type is not None and self.params.controlnet_model is not None
 
     def condition_for_detailing(self, controlnet_name: str, image: Image):
         pass
@@ -102,7 +113,17 @@ class SDWorkflow:
             sigmas = AlignYourStepsScheduler(model_type, num_steps, self.params.denoise_strength)
             self.output_latents, _ = SamplerCustom(self.model, True, self.params.seed, self.params.cfg_scale, self.conditioning, self.negative_conditioning, sampler, sigmas, self.latents[0])
         else:
-            self.output_latents = KSampler(self.model, self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler or "normal", self.conditioning, self.negative_conditioning, self.latents[0], self.params.denoise_strength)
+            self.output_latents = KSampler(self.model,
+                                           self.params.seed,
+                                           self.params.num_steps,
+                                           self.params.cfg_scale,
+                                           self.params.sampler,
+                                           self.params.scheduler or "normal",
+                                           self.conditioning,
+                                           self.negative_conditioning,
+                                           self.latents[0],
+                                           self.params.denoise_strength
+                                           )
 
     def decode(self):
         return VAEDecode(self.output_latents, self.vae)
@@ -120,9 +141,8 @@ class SDXLWorkflow(SDWorkflow):
     def condition_prompts(self):
         self.conditioning = CLIPTextEncodeSDXL(self.clip, 4096, 4096, 0, 0, 4096, 4096, self.params.prompt, self.params.prompt)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
-        if self.params.controlnet_type is not None and self.params.filename is not None:
-            self.controlnet_image = LoadImage(self.params.filename)[0]
-            self.conditioning, self.negative_conditioning = self.controlnet_workflow.do_conditioning(self.conditioning, self.negative_conditioning, self.controlnet_image, self.vae, self.params)
+        if self.should_do_controlnet():
+            self.do_controlnet_conditioning()
 
     def condition_for_detailing(self, controlnet_name: str, image: Image):
         if controlnet_name is None or controlnet_name == "":
@@ -134,13 +154,14 @@ class SDXLWorkflow(SDWorkflow):
         controlnet = ControlNetLoaderAdvanced(controlnet_name)
         self.conditioning, self.negative_conditioning, _ = ACNAdvancedControlNetApply(self.conditioning, self.negative_conditioning, controlnet, image, model_optional=self.model)
 
+
 class PonyWorkflow(SDXLWorkflow):
     def condition_prompts(self):
         self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, self.params.prompt, self.params.prompt)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
-        if self.params.controlnet_type is not None and self.params.filename is not None:
-            self.controlnet_image = LoadImage(self.params.filename)[0]
-            self.conditioning, self.negative_conditioning = self.controlnet_workflow.do_conditioning(self.conditioning, self.negative_conditioning, self.controlnet_image, self.vae, self.params)
+        if self.should_do_controlnet():
+            self.do_controlnet_workflow()
+
 
 class SDCascadeWorkflow(SDWorkflow):
     def _load_model(self):
@@ -174,11 +195,22 @@ class SDCascadeWorkflow(SDWorkflow):
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
 
     def sample(self, use_ays: bool = False):
-        stage_c = KSampler(self.model, self.params.seed, self.params.num_steps, self.params.cfg_scale, self.params.sampler, self.params.scheduler, self.conditioning, self.negative_conditioning, self.latents[0], self.params.denoise_strength)
+        stage_c = KSampler(self.model,
+                           self.params.seed,
+                           self.params.num_steps,
+                           self.params.cfg_scale,
+                           self.params.sampler,
+                           self.params.scheduler,
+                           self.conditioning,
+                           self.negative_conditioning,
+                           self.latents[0],
+                           self.params.denoise_strength
+                           )
         self.stage_b_conditioning = StableCascadeStageBConditioning(self.stage_c_conditioning, self.latents[0])
         conditioning2 = StableCascadeStageBConditioning(self.stage_c_conditioning, stage_c)
         zeroed_out = ConditioningZeroOut(self.stage_c_conditioning)
         self.output_latents = KSampler(self.stage_b_model, self.params.seed, 10, 1.1, self.params.sampler, self.params.scheduler, conditioning2, zeroed_out, self.latents[1], 1)
+
 
 class SD3Workflow(SDWorkflow):
     def _load_model(self):
@@ -217,6 +249,7 @@ class SD3Workflow(SDWorkflow):
         self.model = ModelSamplingSD3(self.model, 3)
         super().sample(use_ays)
 
+
 class FluxWorkflow(SDWorkflow):
     def _load_model(self):
         if self.params.model.endswith(".gguf"):
@@ -241,10 +274,9 @@ class FluxWorkflow(SDWorkflow):
             if self.params.use_triton is True:
                 model = CompileModel(model, 'default', 'inductor', False, False)
         width, height = self.params.dimensions
-        model = ModelSamplingFlux(model,1.15, 0.5, width, height)
-        if self.params.controlnet_type is not None and self.params.controlnet_model is not None:
-            self.controlnet_image = LoadImage(self.params.filename)[0]
-            self.controlnet_workflow = controlnet_workflows[ControlnetTypes[self.params.controlnet_type]](self.params)
+        model = ModelSamplingFlux(model, 1.15, 0.5, width, height)
+        if self.should_do_controlnet():
+            self.do_controlnet_workflow()
         self.model = model
         self.clip = clip
         self.vae = vae
