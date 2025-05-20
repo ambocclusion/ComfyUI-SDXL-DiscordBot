@@ -243,7 +243,7 @@ class SDXLCommand(ImageGenCommands):
                 sampler=defaults.sampler,
                 num_steps=num_steps or defaults.num_steps,
                 cfg_scale=cfg_scale or defaults.cfg_scale,
-                denoise_strength=denoise_strength or defaults.denoise_strength if input_file is not None else 1.0,
+                denoise_strength=defaults.denoise_strength or denoise_strength if input_file is None or controlnet_type is not None else 0.0,
                 batch_size=defaults.batch_size,
                 seed=seed,
                 filename=fp if input_file is not None else None,
