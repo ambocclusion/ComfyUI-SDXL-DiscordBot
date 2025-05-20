@@ -68,4 +68,4 @@ class DepthControlnetWorkflow(ControlnetWorkflow):
         if image is None:
             print("Error: No image provided for ControlNet preprocessing")
             return None
-        return ZoeDepthMapPreprocessor(image, resolution=512)
+        return DepthAnythingPreprocessor(image, resolution=512)
