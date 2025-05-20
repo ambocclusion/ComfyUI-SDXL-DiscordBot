@@ -43,8 +43,8 @@ class PoseControlnetWorkflow(ControlnetWorkflow):
         if image is None:
             print("Error: No image provided for ControlNet preprocessing")
             return None
-        image, _ = OpenposePreprocessor(image, resolution=512)
-        return image
+        i, _ = OpenposePreprocessor(image, resolution=512)
+        return i
 
 
 class CannyControlnetWorkflow(ControlnetWorkflow):
