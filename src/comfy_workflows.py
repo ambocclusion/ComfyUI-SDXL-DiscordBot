@@ -176,10 +176,10 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         if image_wan_teacache == "true":
             # Is it a wan fun model?
             if "fun" in params.model:
-                model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.05, end_percent=1)
+                model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.05, start_percent=0.1, end_percent=1)
             else:
                 # Assume model is wan i2v 480p 14B
-                model = TeaCache(model=model, model_type='wan2.1_i2v_480p_14B_ret_mode', rel_l1_thresh=0.3, end_percent=1)
+                model = TeaCache(model=model, model_type='wan2.1_i2v_480p_14B_ret_mode', rel_l1_thresh=0.3, start_percent=0.1, end_percent=1)
             if image_wan_triton == "true":
                 model = CompileModel(model, 'default', 'inductor', False, False)
         model = ModelSamplingSD3(model, 8)
@@ -218,7 +218,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if t2v_wan_teacache == "true":
-            model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.15, end_percent=1)
+            model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.15, start_percent=0.1, end_percent=1)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)

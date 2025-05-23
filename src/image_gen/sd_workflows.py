@@ -270,7 +270,7 @@ class FluxWorkflow(SDWorkflow):
         else:
             vae = VAELoader("ae.sft")
         if self.params.use_teacache is True and self.params.num_steps > 4:
-            model = TeaCache(model, 'flux', 0.4, 3)
+            model = TeaCache(model, 'flux', 0.4)
             if self.params.use_triton is True:
                 model = CompileModel(model, 'default', 'inductor', False, False)
         width, height = self.params.dimensions
