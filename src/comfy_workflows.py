@@ -132,7 +132,7 @@ async def _do_svd(params: ImageWorkflow, interaction):
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 8, 0, "final_output", "image/gif", False, True, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", "image/gif", False, True, None, None)
         preview = PreviewImage(image)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
@@ -174,14 +174,16 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if image_wan_teacache == "true":
-            # Is it a wan fun model?
-            if "fun" in params.model:
-                model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.05, start_percent=0.1, end_percent=1)
+            # Is it a 14B model?
+            if "480" in params.model:
+                model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.24, 0.2, 6)
+            elif "720" in params.model:
+                model = MagCache(model, MagCache.model_type.wan2_1_i2v_720p_14B, 0.24, 0.2, 6)
             else:
-                # Assume model is wan i2v 480p 14B
-                model = TeaCache(model=model, model_type='wan2.1_i2v_480p_14B_ret_mode', rel_l1_thresh=0.3, start_percent=0.1, end_percent=1)
-            if image_wan_triton == "true":
-                model = CompileModel(model, 'default', 'inductor', False, False)
+            # Otherwise assume model is based on Wan 1.3B. Magcache values here are only a guess.
+                model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
+        if image_wan_triton == "true":
+            model = TorchCompileModel(model, 'inductor')
         model = ModelSamplingSD3(model, 8)
         vae = VAELoader("wan_2.1_vae.safetensors")
         clip_vision = CLIPVisionLoader('clip_vision_h.safetensors')
@@ -191,7 +193,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         positive, negative, latent = WanImageToVideo(positive, negative, vae, new_width, new_height, params.video_length, 1, clip_vision_output, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 16, 0, "final_output", "image/gif", False, True, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", "image/gif", False, True, None, None)
         preview = PreviewImage(image)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
@@ -218,14 +220,14 @@ async def _do_wan(params: ImageWorkflow, interaction):
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if t2v_wan_teacache == "true":
-            model = TeaCache(model=model, model_type='wan2.1_t2v_1.3B_ret_mode', rel_l1_thresh=0.15, start_percent=0.1, end_percent=1)
+            model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
         if t2v_wan_triton == "true":
-            model = CompileModel(model, 'default', 'inductor', False, False)
+            model = TorchCompileModel(model, 'inductor')
             if t2v_wan_distilled == "true":
-                model_distilled = CompileModel(model_distilled, 'default', 'inductor', False, False)
+                model = TorchCompileModel(model_distilled, 'inductor')
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
@@ -239,7 +241,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 16, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await video._wait()
     results = video.wait()._output

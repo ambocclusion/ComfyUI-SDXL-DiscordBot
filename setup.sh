@@ -116,6 +116,14 @@ cd ComfyUI-GGUF
 pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
 
 cd "$EMBEDDED_COMFY_LOCATION/custom_nodes"
+if [ ! -d ComfyUI-MagCache ]; then
+  git clone https://github.com/zehong-ma/ComfyUI-MagCache.git
+  echo "cloned ComfyUI-MagCache"
+fi
+cd ComfyUI-MagCache
+pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
+
+cd "$EMBEDDED_COMFY_LOCATION/custom_nodes"
 if [! -d comfyui_controlnet_aux ]; then
   git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git
   echo "cloned comfyui_controlnet_aux"

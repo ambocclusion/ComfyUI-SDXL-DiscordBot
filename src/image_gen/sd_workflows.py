@@ -270,9 +270,9 @@ class FluxWorkflow(SDWorkflow):
         else:
             vae = VAELoader("ae.sft")
         if self.params.use_teacache is True and self.params.num_steps > 4:
-            model = TeaCache(model, 'flux', 0.4)
-            if self.params.use_triton is True:
-                model = CompileModel(model, 'default', 'inductor', False, False)
+            model = MagCache(model, MagCache.model_type.flux, 0.24, 0.1, 5)
+        if self.params.use_triton is True:
+            model = TorchCompileModel(model, 'inductor')
         width, height = self.params.dimensions
         model = ModelSamplingFlux(model, 1.15, 0.5, width, height)
         if self.should_do_controlnet():
