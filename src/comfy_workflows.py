@@ -66,6 +66,21 @@ async def _do_img2img(params: ImageWorkflow, interaction):
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 
+async def _do_edit(params: ImageWorkflow, interaction):
+    with Workflow() as wf:
+        workflow = model_type_to_workflow[params.model_type](params)
+        image_input = LoadImage(params.filename)[0]
+        image_input = workflow.resize_edit_image(image_input)
+        workflow.create_img2img_latents(image_input)
+        workflow.condition_prompts()
+        workflow.edit_conditioning()
+        workflow.sample()
+        images = workflow.decode_and_save("final_output")
+    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
+    results = await images
+    await results
+    image_batch = [await results.get(i) for i in range(params.batch_size)]
+    return image_batch
 
 async def _do_upscale(params: ImageWorkflow, interaction):
     workflow = UpscaleWorkflow()

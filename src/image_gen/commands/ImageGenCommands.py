@@ -309,6 +309,13 @@ class FluxCommand(SDXLCommand):
         self.command_descs = FLUX_ARG_DESCS
         self.command_choices = FLUX_ARG_CHOICES
         self.model_type = ModelType.FLUX
+        
+class EditCommand(SDXLCommand):
+    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+        super().__init__(tree, "edit")
+        self.command_descs = FLUX_ARG_DESCS
+        self.command_choices = FLUX_ARG_CHOICES
+        self.model_type = ModelType.FLUX_KONTEXT
 
 
 class ImagineCommand(SDXLCommand):

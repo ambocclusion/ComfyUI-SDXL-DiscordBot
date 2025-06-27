@@ -10,6 +10,7 @@ class ModelType(Enum):
     PONY = "PONY",
     SD3 = "SD3",
     FLUX = "FLUX",
+    FLUX_KONTEXT = "FLUX_KONTEXT"
 
 class WorkflowType(Enum):
     txt2img = "txt2img",
@@ -17,6 +18,7 @@ class WorkflowType(Enum):
     upscale = "upscale",
     add_detail = "add_detail",
     image_mashup = "image_mashup",
+    edit = "edit",
     svd = "svd",
     wan = "wan",
     image_wan = "image_wan"
