@@ -230,10 +230,18 @@ class SDXLCommand(ImageGenCommands):
                     return
 
             defaults = COMMAND_DEFAULTS[self.command_name]
-
+            
+            workflow_type = WorkflowType.txt2img if input_file is None or controlnet_type is not None and workflow_type is None else WorkflowType.img2img
+            if self.command_name == "edit":
+                # Send an error if they used the edit command without an attachment.
+                if input_file is None:
+                    await interaction.response.send_message("Error: You must upload a PNG or JPEG image to use the edit command.", ephemeral=True)
+                    return
+                workflow_type = WorkflowType.edit 
+                
             params = ImageWorkflow(
                 model_type=self.model_type,
-                workflow_type=WorkflowType.txt2img if input_file is None or controlnet_type is not None else WorkflowType.img2img,
+                workflow_type=workflow_type,
                 prompt=prompt,
                 negative_prompt=negative_prompt,
                 model=model or defaults.model,
@@ -309,6 +317,13 @@ class FluxCommand(SDXLCommand):
         self.command_descs = FLUX_ARG_DESCS
         self.command_choices = FLUX_ARG_CHOICES
         self.model_type = ModelType.FLUX
+        
+class EditCommand(SDXLCommand):
+    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+        super().__init__(tree, "edit")
+        self.command_descs = FLUX_ARG_DESCS
+        self.command_choices = FLUX_ARG_CHOICES
+        self.model_type = ModelType.FLUX_KONTEXT
 
 
 class ImagineCommand(SDXLCommand):

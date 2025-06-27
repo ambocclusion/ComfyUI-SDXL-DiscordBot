@@ -78,6 +78,7 @@ SD3_GENERATION_DEFAULTS = get_defaults_for_command("SD3_GENERATION_DEFAULTS", Mo
 FLUX_GENERATION_DEFAULTS = get_defaults_for_command("FLUX_GENERATION_DEFAULTS", ModelType.FLUX, "flux")
 ADD_DETAIL_DEFAULTS = get_defaults_for_command("ADD_DETAIL_DEFAULTS", None, "add_detail")
 UPSCALE_DEFAULTS = get_defaults_for_command("UPSCALE_DEFAULTS", None, "upscale")
+EDIT_DEFAULTS = get_defaults_for_command("EDIT_DEFAULTS", ModelType.FLUX_KONTEXT, "edit")
 
 COMMAND_DEFAULTS = {
     "imagine": FLUX_GENERATION_DEFAULTS,
@@ -90,6 +91,7 @@ COMMAND_DEFAULTS = {
     "upscale": UPSCALE_DEFAULTS,
     "sd3": SD3_GENERATION_DEFAULTS,
     "flux": FLUX_GENERATION_DEFAULTS,
+    "edit": EDIT_DEFAULTS
 }
 
 MAX_RETRIES = int(get_default_from_config("BOT", "MAX_RETRIES") or 3)
