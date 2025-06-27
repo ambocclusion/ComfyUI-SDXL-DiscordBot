@@ -176,7 +176,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         if image_wan_teacache == "true":
             # Is it a 14B model?
             if "480" in params.model:
-                model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.24, 0.2, 6)
+                model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.16, 0.1, 4)
             elif "720" in params.model:
                 model = MagCache(model, MagCache.model_type.wan2_1_i2v_720p_14B, 0.24, 0.2, 6)
             else:
