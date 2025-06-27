@@ -20,7 +20,8 @@ model_type_to_workflow = {
     ModelType.CASCADE: SDCascadeWorkflow,
     ModelType.PONY: PonyWorkflow,
     ModelType.SD3: SD3Workflow,
-    ModelType.FLUX: FluxWorkflow
+    ModelType.FLUX: FluxWorkflow,
+    ModelType.FLUX_KONTEXT: FluxWorkflow
 }
 
 config = configparser.ConfigParser()
@@ -289,7 +290,8 @@ workflow_type_to_method = {
     WorkflowType.image_mashup: _do_image_mashup,
     WorkflowType.svd: _do_svd,
     WorkflowType.wan: _do_wan,
-    WorkflowType.image_wan: _do_image_wan
+    WorkflowType.image_wan: _do_image_wan,
+    WorkflowType.edit: _do_edit
 }
 
 user_queues = {}

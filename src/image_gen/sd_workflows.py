@@ -132,8 +132,8 @@ class SDWorkflow:
         image = VAEDecode(self.output_latents, self.vae)
         return SaveImage(image, file_name)
     
-    def resize_edit_image(self, image_input: Image):
-        input_image = FluxKontextImageScale(input_image)
+    def resize_edit_image(self, input_image: Image):
+        return FluxKontextImageScale(input_image)
 
 class SD15Workflow(SDWorkflow):
     pass
@@ -304,7 +304,7 @@ class FluxWorkflow(SDWorkflow):
             self.conditioning, _, _ = ReduxAdvanced(self.conditioning, style_model, self.clip_vision, input, 1, 'area', 'center crop (square)', mashup_strength)
     
     def edit_conditioning(self, use_ays: bool = False):
-       self.conditioning = ReferenceLatent(self.conditioning, self.latent)      
+       self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])      
 
 
 class UpscaleWorkflow:

@@ -53,6 +53,7 @@ CASCADE_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for 
 SD3_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "sd3")]
 SD3_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "sd3")]
 FLUX_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "flux")]
+FLUX_KONTEXT_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "flux_kontext")]
 FLUX_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "flux")]
 VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "wan")]
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
@@ -187,6 +188,12 @@ FLUX_ARG_CHOICES = {
     "lora2": FLUX_LORA_CHOICES[:25],
     **BASE_ARG_CHOICES
 }
+FLUX_KONTEXT_ARG_CHOICES = {
+    "model": FLUX_KONTEXT_MODEL_CHOICES[:25],
+    "lora": FLUX_LORA_CHOICES[:25],
+    "lora2": FLUX_LORA_CHOICES[:25],
+}
+
 VIDEO_ARG_CHOICES = {
     "lora": VIDEO_LORA_CHOICES[:25],
 }
