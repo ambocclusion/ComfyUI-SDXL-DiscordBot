@@ -71,7 +71,7 @@ async def _do_edit(params: ImageWorkflow, interaction):
     with Workflow() as wf:
         workflow = model_type_to_workflow[params.model_type](params)
         image_inputs = [LoadImage(filename)[0] for filename in [params.filename, params.filename2] if filename is not None]
-        if(image_inputs)[1] is not None:
+        if len(image_inputs)> 1:
             image_input = ImageStitch(image_inputs[0], 'right', True, 0, 'white', image_inputs[1])
         else:
             image_input = image_inputs[0]
