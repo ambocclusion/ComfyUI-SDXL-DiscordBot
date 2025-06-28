@@ -144,7 +144,7 @@ class ImageGenCommands:
             if params.seed is None:
                 params.seed = random.randint(0, 999999999999999)
 
-            if params.filename2 is not None:
+            if params.filename2 is not None and params.workflow_type is not WorkflowType.edit:
                 params.workflow_type = WorkflowType.image_mashup
 
             from src.comfy_workflows import do_workflow
