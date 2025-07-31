@@ -203,7 +203,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
             # Otherwise assume model is based on Wan 1.3B. Magcache values here are only a guess.
                 model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
         if image_wan_triton == "true":
-            model = TorchCompileModel(model, 'inductor')
+            model = CompileModel(model)
         model = ModelSamplingSD3(model, 8)
         vae = VAELoader("wan_2.1_vae.safetensors")
         clip_vision = CLIPVisionLoader('clip_vision_h.safetensors')
@@ -245,9 +245,9 @@ async def _do_wan(params: ImageWorkflow, interaction):
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
         if t2v_wan_triton == "true":
-            model = TorchCompileModel(model, 'inductor')
+            model = CompileModel(model)
             if t2v_wan_distilled == "true":
-                model = TorchCompileModel(model_distilled, 'inductor')
+                model = CompileModel(model_distilled)
         vae = VAELoader("wan_2.1_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
