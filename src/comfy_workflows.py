@@ -182,7 +182,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
             image.save(fp=output_path)
 
     with Workflow() as wf:
-        if output_path is not '':
+        if output_path != '':
             image = LoadImage(output_path)[0]
         else:
             image = LoadImage(params.filename)[0]
@@ -212,7 +212,8 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         model = ModelSamplingSD3(model, 8)
         vae = VAELoader("wan2.2_vae.safetensors")
         positive = CLIPTextEncode(params.prompt, clip)
-        negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1, image)
+        negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
+        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
         video = VHSVideoCombine(image2, 24, 0, "final_output", VHSVideoCombine.format.image/gif, False, True, None, None)
@@ -262,7 +263,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image/gif, False, True, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await video._wait()
     results = video.wait()._output
