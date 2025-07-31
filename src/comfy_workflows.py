@@ -164,6 +164,7 @@ async def _do_svd(params: ImageWorkflow, interaction):
 async def _do_image_wan(params: ImageWorkflow, interaction):
     import PIL
     max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
+    output_path = ''
     with open(params.filename, "rb") as f:
         image = PIL.Image.open(f)
         width = image.width
@@ -171,9 +172,9 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         # If either dimension exceeds max_width, resize while maintaining aspect ratio
         if width > max_width or height > max_width:
             scale_factor = min(max_width / width, max_width / height)
-            new_width = int(width * scale_factor)
-            new_height = int(height * scale_factor)
-            image = image.resize((new_width, new_height))
+            width = int(width * scale_factor)
+            height = int(height * scale_factor)
+            image = image.resize((width, height))
             # Save the resized image
             output_path, filename = os.path.split(params.filename)
             new_filename = f"wan_{filename}"
@@ -181,7 +182,10 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
             image.save(fp=output_path)
 
     with Workflow() as wf:
-        image = LoadImage(output_path)[0]
+        if output_path is not '':
+            image = LoadImage(output_path)[0]
+        else:
+            image = LoadImage(params.filename)[0]
         if params.model.endswith(".gguf"):
             model = UnetLoaderGGUF(params.model)
         else:
@@ -193,27 +197,25 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        if image_wan_teacache == "true":
-            # Is it a 14B model?
-            if "480" in params.model:
-                model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.16, 0.1, 4)
-            elif "720" in params.model:
-                model = MagCache(model, MagCache.model_type.wan2_1_i2v_720p_14B, 0.24, 0.2, 6)
-            else:
-            # Otherwise assume model is based on Wan 1.3B. Magcache values here are only a guess.
-                model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
+        # Commenting this out for now since magcache breaks 5B i2v.
+        # if image_wan_teacache == "true":
+        #     # Is it a 14B model?
+        #     if "480" in params.model:
+        #         model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.2, 0.1, 6)
+        #     elif "720" in params.model:
+        #         model = MagCache(model, MagCache.model_type.wan2_1_i2v_720p_14B, 0.24, 0.2, 6)
+        #     else:
+        #     # Otherwise assume model is based on Wan 1.3B. Magcache values here are only a guess.
+        #         model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
         if image_wan_triton == "true":
             model = CompileModel(model)
         model = ModelSamplingSD3(model, 8)
-        vae = VAELoader("wan_2.1_vae.safetensors")
-        clip_vision = CLIPVisionLoader('clip_vision_h.safetensors')
+        vae = VAELoader("wan2.2_vae.safetensors")
         positive = CLIPTextEncode(params.prompt, clip)
-        negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
-        clip_vision_output = CLIPVisionEncode(clip_vision, image)
-        positive, negative, latent = WanImageToVideo(positive, negative, vae, new_width, new_height, params.video_length, 1, clip_vision_output, image)
+        negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", "image/gif", False, True, None, None)
+        video = VHSVideoCombine(image2, 24, 0, "final_output", VHSVideoCombine.format.image/gif, False, True, None, None)
         preview = PreviewImage(image)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
@@ -227,7 +229,6 @@ async def _do_wan(params: ImageWorkflow, interaction):
     import PIL
 
     with Workflow() as wf:
-        image = LoadImage(params.filename)[0]
         if params.model.endswith(".gguf"):
             model = UnetLoaderGGUF(params.model)
         else:
@@ -240,7 +241,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if t2v_wan_teacache == "true":
-            model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
+            model = MagCache(model, MagCache.model_type.wan2_1_t2v_14B, 0.12, 0.2, 6)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
@@ -248,20 +249,20 @@ async def _do_wan(params: ImageWorkflow, interaction):
             model = CompileModel(model)
             if t2v_wan_distilled == "true":
                 model = CompileModel(model_distilled)
-        vae = VAELoader("wan_2.1_vae.safetensors")
+        vae = VAELoader("wan2.2_vae.safetensors")
         conditioning = CLIPTextEncode(params.prompt, clip)
         negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
-        aspect_ratio = 1.333
+        aspect_ratio = 1.77
         width = params.video_width
         height = floor(width / aspect_ratio)
-        latent = EmptyHunyuanLatentVideo(width=width, height=height, length=params.video_length)
+        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1)
         if t2v_wan_distilled == "true":
             latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
             latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image/gif, False, True, None, None)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await video._wait()
     results = video.wait()._output
