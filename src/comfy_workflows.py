@@ -152,7 +152,7 @@ async def _do_svd(params: ImageWorkflow, interaction):
         else:
             latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", "image/gif", False, True, None, None)
+        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
         preview = PreviewImage(image)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
@@ -216,7 +216,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1, image)
         latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
         image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 24, 0, "final_output", VHSVideoCombine.format.image/gif, False, True, None, None)
+        video = VHSVideoCombine(image2, 24, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
         preview = PreviewImage(image)
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     await preview._wait()
