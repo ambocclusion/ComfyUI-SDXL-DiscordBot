@@ -273,7 +273,7 @@ class FluxWorkflow(SDWorkflow):
             vae = VAELoader("ae.sft")
         if self.params.use_teacache is True:
             if self.params.workflow_type is WorkflowType.edit:
-                model = MagCache(model, MagCache.model_type.flux_kontext, 0.05, 0.2, 4, 5)
+                model = MagCache(model, MagCache.model_type.flux_kontext, 0.05, 0.2, 4)
             else:   
                 model = MagCache(model, MagCache.model_type.flux, 0.24, 0.1, 5, 5)
         if self.params.use_triton is True:
