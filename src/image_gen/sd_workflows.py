@@ -273,7 +273,7 @@ class FluxWorkflow(SDWorkflow):
             vae = VAELoader("ae.sft")
         if self.params.use_teacache is True:
             if self.params.workflow_type is WorkflowType.edit:
-                model = MagCache(model, MagCache.model_type.flux_kontext, 0.05, 0.2, 4, 5)
+                model = MagCache(model, MagCache.model_type.flux_kontext, 0.05, 0.2, 4)
             else:   
                 model = MagCache(model, MagCache.model_type.flux, 0.24, 0.1, 5, 5)
         if self.params.use_triton is True:
@@ -300,7 +300,7 @@ class FluxWorkflow(SDWorkflow):
         style_model = StyleModelLoader(StyleModels.flux1_redux_dev)
 
         for i, input in enumerate(image_input):
-            mashup_strength = self.params.mashup_image_strength if i == 0 else self.params.mashup_inputimage_strength
+            mashup_strength = self.params.mashup_image_strength if i == 1 else self.params.mashup_inputimage_strength
             if input is None:
                 continue
 

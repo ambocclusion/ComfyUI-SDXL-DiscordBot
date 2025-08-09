@@ -231,7 +231,7 @@ class SDXLCommand(ImageGenCommands):
 
             defaults = COMMAND_DEFAULTS[self.command_name]
             
-            workflow_type = WorkflowType.txt2img if input_file is None or controlnet_type is not None and workflow_type is None else WorkflowType.img2img
+            workflow_type = WorkflowType.txt2img if input_file is None or controlnet_type is not None else WorkflowType.img2img
             if self.command_name == "edit":
                 # Send an error if they used the edit command without an attachment.
                 if input_file is None:
