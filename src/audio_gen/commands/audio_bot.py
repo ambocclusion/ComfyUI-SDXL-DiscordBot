@@ -31,7 +31,6 @@ class SoundCommand:
         interaction: discord.Interaction,
         intro_message,
         completion_message,
-        command_name,
         params,
     ):
         await interaction.response.send_message(intro_message)
@@ -77,7 +76,6 @@ class MusicGenCommand(SoundCommand):
                 interaction,
                 msg_prefix + "this shouldn't take too long...",
                 msg_prefix + "here is what I made for them.",
-                "music",
                 params,
             )
 
@@ -109,7 +107,6 @@ class MusicGenCommand(SoundCommand):
                 interaction,
                 msg_prefix + "this shouldn't take too long...",
                 msg_prefix + "here is what I made for them.",
-                "acestep",
                 params,
             )
 
@@ -139,7 +136,6 @@ class SpeechGenCommand(SoundCommand):
                 interaction,
                 f'{interaction.user.mention} wants to speak, this shouldn\'t take too long...',
                 f'{interaction.user.mention} said "{prompt}".',
-                "speech",
                 params,
             )
 
@@ -168,6 +164,5 @@ class SpeechGenCommand(SoundCommand):
                 interaction,
                 f'🎙️{interaction.user.mention} wants to sing, this shouldn\'t take too long...🎙️',
                 f'🎙️{interaction.user.mention} sang "{lyrics}".🎙️',
-                "sing",
                 params,
             )

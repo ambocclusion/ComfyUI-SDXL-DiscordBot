@@ -143,7 +143,7 @@ class AudioRemixModal(ui.Modal, title="Remix Sound"):
         try:
             params.prompt = self.prompt.value
             params.secondary_prompt = self.lyrics.value
-            params.denoise_strength = float(self.remix_strength.value or 0.5)
+            params.denoise_strength = float(self.remix_strength.value or self.remix_strength.default)
         except ValueError:
             interaction.response.send_message(
                 "An error occurred while parsing a value you entered. Please check your inputs and try your request again.",
