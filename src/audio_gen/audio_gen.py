@@ -128,7 +128,7 @@ class TortoiseTTSWorkflow(AudioWorkflow):
             model,
             params.voice,
             params.prompt,
-            batch_size=params.batch_size,
+            batch_size=4,
             num_autoregressive_samples=32,
             autoregressive_batch_size=8,
             temperature=params.temperature,
@@ -153,8 +153,19 @@ class TortoiseMusicgenWorkflow(MusicgenWorkflow):
         tts_model, tts_sr = TortoiseTTSLoader(True, False, False, False)
         tts_audio = TortoiseTTSGenerate(tts_model, params.voice, params.prompt, 4, 8, 8, 0.3, 2, 4, 0.8, 300, 0.70, 10, True, 2, 1, params.seed or random.randint(0, 2**32 - 1))
         model, sr = MusicgenLoader()
-        tts_audio = ConvertAudio(tts_audio, tts_sr, sr, 1)
-        out_audio = MusicgenGenerate(model, params.secondary_prompt, 4, 15, params.cfg_scale, params.top_k, params.top_p, params.temperature, params.seed or random.randint(0, 2**32 - 1), tts_audio)
+        tts_audio = ConvertAudio(tts_audio, sr, 1)
+        out_audio = MusicgenGenerate(
+            model,
+            params.secondary_prompt,
+            4,
+            15,
+            params.cfg_scale,
+            params.top_k,
+            params.top_p,
+            params.temperature,
+            params.seed or random.randint(0, 2**32 - 1),
+            tts_audio,
+        )
         return make_spectrogram_webm(out_audio)
 
 

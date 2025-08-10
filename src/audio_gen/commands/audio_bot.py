@@ -13,6 +13,7 @@ from src.audio_gen.audio_gen import (
     model_type_to_workflow
 )
 from src.audio_gen.audio_workflow import (
+    AudioModelType,
     ACESTEP_DEFAULTS,
     MUSICGEN_DEFAULTS,
     TORTOISE_DEFAULTS,
@@ -151,7 +152,8 @@ class SpeechGenCommand(SoundCommand):
             temperature: Range[float, 1e-3, 10.0] = None,
             seed: int = None,
         ):
-            params = deepcopy(TORTOISE_DEFAULTS)
+            params = deepcopy(MUSICGEN_DEFAULTS)
+            params.model_type = AudioModelType.TORTOISE_MUSICGEN
             params.prompt = lyrics
             params.secondary_prompt = music_prompt
             params.voice = voice or params.voice
