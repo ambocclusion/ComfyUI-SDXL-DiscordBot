@@ -54,8 +54,7 @@ def get_sound_duration(snd_filename):
 
 
 def make_spectrogram_webm(audio):
-    spectrogram_image = SpectrogramImage(audio, 1024, 256, 1024, 0.4, normalized=True)
-    spectrogram_image = ImageScale(spectrogram_image, ImageScale.upscale_method.lanczos, 512, 128, "disabled")
+    spectrogram_image = SpectrogramImage(audio, 1024, 256, 1024, 0.4, normalized=True, logy=True, width=512, height=128)
     return CombineImageWithAudio(spectrogram_image, audio, CombineImageWithAudio.file_format.webm, "ComfyUI")
 
 
@@ -119,8 +118,31 @@ class TortoiseTTSWorkflow(AudioWorkflow):
     @comfy_workflow
     def generate(self):
         params = self.params
-        model, sr = TortoiseTTSLoader(True, False, False, False)
-        out_audio = TortoiseTTSGenerate(model, params.voice, params.prompt, 4, 8, 8, 0.3, 2, 4, 0.8, 300, 0.70, 10, True, 2, 1, params.seed or random.randint(0, 2**32 - 1))
+        model, sr = TortoiseTTSLoader(
+            kv_cache=True,
+            half=False,
+            use_deepspeed=False,
+            use_fast_api=False,
+        )
+        out_audio = TortoiseTTSGenerate(
+            model,
+            params.voice,
+            params.prompt,
+            batch_size=params.batch_size,
+            num_autoregressive_samples=32,
+            autoregressive_batch_size=8,
+            temperature=params.temperature,
+            length_penalty=1.0,
+            repetition_penalty=2.0,
+            top_p=params.top_p,
+            max_mel_tokens=300,
+            cvvp_amount=0.0,
+            diffusion_steps=30,
+            cond_free=True,
+            cond_free_k=2.0,
+            diffusion_temperature=1.0,
+            seed=params.seed or random.randint(0, 2**32 - 1),
+        )
         return make_spectrogram_webm(out_audio)
 
 
