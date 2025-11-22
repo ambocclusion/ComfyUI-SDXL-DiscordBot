@@ -197,16 +197,13 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
                 if lora.name == None or lora.name == "None":
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        # Commenting this out for now since magcache breaks 5B i2v.
-        # if image_wan_teacache == "true":
-        #     # Is it a 14B model?
-        #     if "480" in params.model:
-        #         model = MagCache(model, MagCache.model_type.wan2_1_i2v_480p_14B, 0.2, 0.1, 6)
-        #     elif "720" in params.model:
-        #         model = MagCache(model, MagCache.model_type.wan2_1_i2v_720p_14B, 0.24, 0.2, 6)
-        #     else:
-        #     # Otherwise assume model is based on Wan 1.3B. Magcache values here are only a guess.
-        #         model = MagCache(model, MagCache.model_type.wan2_1_t2v_1_3B, 0.12, 0.2, 4)
+        if image_wan_teacache == "true":
+            # Is it a 14B model?
+            if "14B" in params.model:
+                model = EasyCache(model, 0.05, 0.15, 0.95, True)
+            else:
+            # Otherwise assume model is based on Wan 5B.
+                model = EasyCache(model, 0.15, 0.25, 0.95, True)
         if image_wan_triton == "true":
             model = CompileModel(model)
         model = ModelSamplingSD3(model, 8)
@@ -242,7 +239,10 @@ async def _do_wan(params: ImageWorkflow, interaction):
                     continue
                 model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
         if t2v_wan_teacache == "true":
-            model = MagCache(model, MagCache.model_type.wan2_1_t2v_14B, 0.12, 0.2, 6)
+            if "14B" in params.model:
+                model = EasyCache(model, 0.06, 0.15, 0.95, True)
+            else:
+                model = EasyCache(model, 0.15, 0.25, 0.95, True)
         model = ModelSamplingSD3(model, 8)
         if t2v_wan_distilled == "true":
             model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)

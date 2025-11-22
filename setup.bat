@@ -107,14 +107,6 @@ IF NOT EXIST ComfyUI-GGUF (
 cd ComfyUI-GGUF
 python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
 
-cd %EMBEDDED_COMFY_LOCATION%\custom_nodes
-IF NOT EXIST ComfyUI-MagCache (
-    git clone https://github.com/zehong-ma/ComfyUI-MagCache.git
-    echo cloned ComfyUI-MagCache
-)
-cd ComfyUI-MagCache
-python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
-
 cd %EMBEDDED_COMFY_LOCATION%/models/checkpoints
 mkdir xl
 mkdir 15
