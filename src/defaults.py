@@ -64,6 +64,7 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         None,
         float(get_default_from_config(section, "CONTROLNET_START_PERCENT", 0.0)),
         float(get_default_from_config(section, "CONTROLNET_END_PERCENT", 1.0)),
+        str(get_default_from_config(section, "CLIP_MODEL")),
     )
     return workflow
 

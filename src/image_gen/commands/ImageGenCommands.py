@@ -107,6 +107,7 @@ class ImageGenCommands:
                 negative_style_prompt=generation_defaults.negative_style_prompt,
                 video_width=generation_defaults.video_width,
                 video_length=generation_defaults.video_length,
+                clip_model=generation_defaults.clip_model,
             )
             await self._do_request(
                 interaction,
@@ -284,6 +285,7 @@ class SDXLCommand(ImageGenCommands):
                 controlnet_strength=controlnet_strength or defaults.controlnet_strength,
                 controlnet_start_percent=controlnet_start_percent or defaults.controlnet_start_percent,
                 controlnet_end_percent=controlnet_end_percent or defaults.controlnet_end_percent,
+                clip_model=defaults.clip_model,
             )
 
             await self._do_request(

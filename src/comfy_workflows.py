@@ -190,7 +190,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
             model = UnetLoaderGGUF(params.model)
         else:
             model = UNETLoader(params.model)
-        clip_model = CLIPLoaderGGUF.clip_name.umt5_xxl_encoder_Q6_K_gguf
+        clip_model = params.clip_model
         clip = CLIPLoaderGGUF(clip_model, "wan")
         if params.lora_dict:
             for lora in params.lora_dict:
@@ -231,7 +231,7 @@ async def _do_wan(params: ImageWorkflow, interaction):
             model = UnetLoaderGGUF(params.model)
         else:
             model = UNETLoader(params.model)
-        clip_model = CLIPLoaderGGUF.clip_name.umt5_xxl_encoder_Q6_K_gguf
+        clip_model = params.clip_model
         clip = CLIPLoaderGGUF(clip_model, "wan")
         if params.lora_dict:
             for lora in params.lora_dict:
