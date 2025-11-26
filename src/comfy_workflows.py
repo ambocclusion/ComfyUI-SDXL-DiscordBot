@@ -169,17 +169,17 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
         image = PIL.Image.open(f)
         width = image.width
         height = image.height
-        # If either dimension exceeds max_width, resize while maintaining aspect ratio
-        if width > max_width or height > max_width:
-            scale_factor = min(max_width / width, max_width / height)
-            width = int(width * scale_factor)
-            height = int(height * scale_factor)
-            image = image.resize((width, height))
+        if params.crop_image or width > max_width or height > max_width:
+            from src.imgutils import smart_crop, smart_resize
+            image = smart_crop(image)
+            image = smart_resize(image, max_width)
             # Save the resized image
             output_path, filename = os.path.split(params.filename)
             new_filename = f"wan_{filename}"
             output_path = output_path + "/" + new_filename
             image.save(fp=output_path)
+        width = image.width
+        height = image.height
 
     with Workflow() as wf:
         if output_path != '':
@@ -368,7 +368,8 @@ async def do_workflow(params: ImageWorkflow, interaction: discord.Interaction):
             user_queues[user.id] -= 1
             await interaction.edit_original_response(attachments=[])
             return result
-        except:
+        except Exception as e:
+            print(f"Error during image generation: {e}")
             user_queues[user.id] -= 1
             retries += 1
 

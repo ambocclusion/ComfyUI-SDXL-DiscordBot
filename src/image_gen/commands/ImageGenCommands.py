@@ -108,6 +108,7 @@ class ImageGenCommands:
                 video_width=generation_defaults.video_width,
                 video_length=generation_defaults.video_length,
                 clip_model=generation_defaults.clip_model,
+                crop_image=generation_defaults.crop_image,
             )
             await self._do_request(
                 interaction,

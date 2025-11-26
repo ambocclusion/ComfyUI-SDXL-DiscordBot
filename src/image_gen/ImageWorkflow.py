@@ -92,4 +92,5 @@ class ImageWorkflow:
     controlnet_strength: Optional[float] = None
     controlnet_start_percent: Optional[float] = None
     controlnet_end_percent: Optional[float] = None
-    clip_model: Optional[str] = None
+    clip_model: Optional[str] = None,
+    crop_image: Optional[bool] = None,
