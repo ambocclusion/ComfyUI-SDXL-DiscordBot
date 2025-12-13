@@ -107,6 +107,15 @@ IF NOT EXIST ComfyUI-GGUF (
 cd ComfyUI-GGUF
 python -m pip install -r requirements.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
 
+cd %EMBEDDED_COMFY_LOCATION%\custom_nodes
+IF NOT EXIST ComfyUI-audio (
+    git clone https://github.com/handoniumumumum/ComfyUI-audio.git
+    echo cloned ComfyUI-audio
+)
+cd ComfyUI-audio
+python -m pip install -r requirements_windows.txt -U --extra-index-url %TORCH_CUDA_INDEX_URL%
+
+
 cd %EMBEDDED_COMFY_LOCATION%/models/checkpoints
 mkdir xl
 mkdir 15

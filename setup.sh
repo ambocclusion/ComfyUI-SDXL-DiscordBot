@@ -105,7 +105,7 @@ fi
 
 cd "$EMBEDDED_COMFY_LOCATION/custom_nodes"
 if [ ! -d ComfyUI-audio ]; then
-  git clone https://github.com/eigenpunk/ComfyUI-audio.git
+  git clone https://github.com/handoniumumumum/ComfyUI-audio.git
   echo "cloned ComfyUI-audio"
 fi
 cd ComfyUI-audio
