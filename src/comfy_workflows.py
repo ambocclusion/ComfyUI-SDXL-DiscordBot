@@ -2,14 +2,11 @@ import configparser
 import os
 from math import floor
 
-import PIL
 import discord
-import asyncio
 
 from PIL import Image
 
 from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
-from src.image_gen.ImageWorkflow import *
 from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.sd_workflows import *
 from src.util import get_loras_from_prompt

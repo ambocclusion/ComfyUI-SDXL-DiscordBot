@@ -23,7 +23,6 @@ class ImageGenCommands:
 
         @self.tree.command(name="svd", description="Generate a video based on an input image using StableVideoDiffusion")
         @app_commands.describe(**SVD_ARG_DESCS)
-        # @app_commands.choices(**VIDEO_ARG_CHOICES)
         async def slash_command(
                 interaction: discord.Interaction,
                 input_file: Attachment,
@@ -181,13 +180,14 @@ class ImageGenCommands:
             await interaction.channel.send(f"{interaction.user.mention} `Error generating image: {e} for command {command_name}`")
 
 
-class SDXLCommand(ImageGenCommands):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
+class ImageGenerationCommand(ImageGenCommands):
+    def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition):
         super().__init__(tree)
-        self.command_name = command_name
-        self.command_descs = SDXL_ARG_DESCS
-        self.command_choices = SDXL_ARG_CHOICES
-        self.model_type = ModelType.SDXL
+        self.command_name = model_definition.slash_command
+        self.command_descs = model_definition.argument_descriptions
+        self.command_choices = model_definition.argument_choices
+        self.model_type = model_definition.model_type
+        self.model_definition = model_definition
 
     def add_commands(self):
         @self.tree.command(name=self.command_name, description=f"Generate an image using {self.command_name.upper()}")
@@ -296,58 +296,3 @@ class SDXLCommand(ImageGenCommands):
                 self.command_name,
                 params,
             )
-
-
-class PonyXLCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "pony")
-        self.command_descs = PONY_ARG_DESCS
-        self.command_choices = PONY_ARG_CHOICES
-        self.model_type = ModelType.PONY
-
-
-class SD3Command(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "sd3")
-        self.command_descs = SD3_ARG_DESCS
-        self.command_choices = SD3_ARG_CHOICES
-        self.model_type = ModelType.SD3
-
-
-class FluxCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "flux")
-        self.command_descs = FLUX_ARG_DESCS
-        self.command_choices = FLUX_ARG_CHOICES
-        self.model_type = ModelType.FLUX
-        
-class EditCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "edit")
-        self.command_descs = FLUX_ARG_DESCS
-        self.command_choices = FLUX_ARG_CHOICES
-        self.model_type = ModelType.FLUX_KONTEXT
-
-
-class ImagineCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "imagine")
-        self.command_descs = FLUX_ARG_DESCS
-        self.command_choices = FLUX_ARG_CHOICES
-        self.model_type = ModelType.FLUX
-
-
-class CascadeCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "cascade")
-        self.command_descs = CASCADE_ARG_DESCS
-        self.command_choices = CASCADE_ARG_CHOICES
-        self.model_type = ModelType.CASCADE
-
-
-class LegacyCommand(SDXLCommand):
-    def __init__(self, tree: discord.app_commands.CommandTree, command_name: str):
-        super().__init__(tree, "legacy")
-        self.command_descs = LEGACY_ARG_DESCS
-        self.command_choices = LEGACY_ARG_CHOICES
-        self.model_type = ModelType.SD15
