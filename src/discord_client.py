@@ -3,8 +3,6 @@ import logging
 
 import discord
 
-from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, ImageGenCommands
-from src.image_gen.model_definitions.model_definitions import *
 from src.util import setup_config, read_config
 
 discord.utils.setup_logging()
@@ -25,16 +23,18 @@ async def on_ready():
 
     await asyncio.sleep(1)
     print("server start")
+    from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, ImageGenCommands
     commands = []
     
     commands.append(ImageGenCommands(tree))
-    commands.append(ImageGenerationCommand(tree, SD15ModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, SDXLModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, CascadeModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, PonyModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, SD3ModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, FluxModelDefinition()))
-    commands.append(ImageGenerationCommand(tree, FluxKontextModelDefinition()))
+    from src.image_gen.model_definitions import model_definitions
+    commands.append(ImageGenerationCommand(tree, model_definitions.SD15ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.SDXLModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.CascadeModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.PonyModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.SD3ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.FluxModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.FluxKontextModelDefinition()))
     
     # remove commands that have no models available
     commands = [cmd for cmd in commands if not isinstance(cmd, ImageGenerationCommand) or len(cmd.model_definition.model_choices) > 0]

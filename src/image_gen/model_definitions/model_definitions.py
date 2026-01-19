@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from src.ModelDefinition import ModelDefinition
-from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS
+from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS, BASE_ARG_CHOICES
 from src.image_gen.ImageWorkflow import ModelType
 
 
@@ -20,11 +20,18 @@ class SD15ModelDefinition(ModelDefinition):
     slash_command: str = "legacy"
     config_section: str = "SD15_GENERATION"
     model_folder: str = "15"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class SDXLModelDefinition(ModelDefinition):
     model_name: str = "SDXL"
@@ -32,11 +39,18 @@ class SDXLModelDefinition(ModelDefinition):
     slash_command: str = "sdxl"
     config_section: str = "SDXL_GENERATION"
     model_folder: str = "sdxl"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class CascadeModelDefinition(ModelDefinition):
     model_name: str = "CASCADE"
@@ -44,11 +58,18 @@ class CascadeModelDefinition(ModelDefinition):
     slash_command: str = "cascade"
     config_section: str = "CASCADE_GENERATION"
     model_folder: str = "cascade"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class PonyModelDefinition(ModelDefinition):
     model_name: str = "PONY"
@@ -56,11 +77,18 @@ class PonyModelDefinition(ModelDefinition):
     slash_command: str = "pony"
     config_section: str = "PONY_GENERATION"
     model_folder: str = "pony"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class SD3ModelDefinition(ModelDefinition):
     model_name: str = "SD3"
@@ -68,11 +96,18 @@ class SD3ModelDefinition(ModelDefinition):
     slash_command: str = "sd3"
     config_section: str = "SD3_GENERATION"
     model_folder: str = "sd3"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class FluxModelDefinition(ModelDefinition):
     model_name: str = "FLUX"
@@ -80,10 +115,17 @@ class FluxModelDefinition(ModelDefinition):
     slash_command: str = "flux"
     config_section: str = "FLUX_GENERATION"
     model_folder: str = "flux"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
 
 @dataclass
 class FluxKontextModelDefinition(ModelDefinition):
@@ -92,11 +134,18 @@ class FluxKontextModelDefinition(ModelDefinition):
     slash_command: str = "edit"
     config_section: str = "EDIT_GENERATION"
     model_folder: str = "flux_kontext"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 # SVD_GENERATION_DEFAULTS = get_defaults_for_command("SVD_GENERATION_DEFAULTS", ModelType.VIDEO, "video")
 # WAN_GENERATION_DEFAULTS = get_defaults_for_command("WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "wan")
 # IMAGE_WAN_GENERATION_DEFAULTS = get_defaults_for_command("IMAGE_WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "image_wan")
@@ -107,11 +156,18 @@ class SVDModelDefinition(ModelDefinition):
     slash_command: str = "video"
     config_section: str = "SVD_GENERATION"
     model_folder: str = "video"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class WANModelDefinition(ModelDefinition):
     model_name: str = "WAN"
@@ -119,11 +175,18 @@ class WANModelDefinition(ModelDefinition):
     slash_command: str = "wan"
     config_section: str = "WAN_GENERATION"
     model_folder: str = "wan"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 @dataclass
 class ImageWANModelDefinition(ModelDefinition):
     model_name: str = "IMAGE_WAN"
@@ -131,11 +194,18 @@ class ImageWANModelDefinition(ModelDefinition):
     slash_command: str = "image_wan"
     config_section: str = "IMAGE_WAN_GENERATION"
     model_folder: str = "image_wan"
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
-    
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+
 # ADD_DETAIL_DEFAULTS = get_defaults_for_command("ADD_DETAIL_DEFAULTS", None, "add_detail")
 # UPSCALE_DEFAULTS = get_defaults_for_command("UPSCALE_DEFAULTS", None, "upscale")
 @dataclass
@@ -145,14 +215,12 @@ class AddDetailModelDefinition(ModelDefinition):
     slash_command: str = "add_detail"
     config_section: str = "ADD_DETAIL"
     model_folder: str = None
-    argument_descriptions = {
-        **BASE_ARG_DESCS,
-        **IMAGE_GEN_DESCS,
-    }
     
+
 @dataclass
 class UpscaleModelDefinition(ModelDefinition):
     model_name: str = "UPSCALE"
     model_type: ModelType = None
     slash_command: str = "upscale"
     config_section: str = "UPSCALE"
+    model_folder: str = None

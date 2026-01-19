@@ -5,7 +5,6 @@ from discord.app_commands import Choice
 from src.comfyscript_utils import get_models, get_loras, get_samplers, get_schedulers
 from src.consts import *
 from src.defaults import *
-from src.image_gen.model_definitions.model_definitions import SDXLModelDefinition, SD15ModelDefinition, PonyModelDefinition, CascadeModelDefinition, SD3ModelDefinition, FluxModelDefinition, FluxKontextModelDefinition
 
 models = get_models()
 loras = get_loras()
@@ -50,22 +49,22 @@ SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
 CONTROLNET_CHOICES = [Choice(name="pose", value="pose"), Choice(name="canny", value="canny"), Choice(name="depth", value="depth")]
 
-COMMAND_MODEL_CHOICES = {
-    "sdxl": SDXLModelDefinition().model_choices,
-    "legacy": SD15ModelDefinition().model_choices,
-    "pony": PonyModelDefinition().model_choices,
-    "cascade": CascadeModelDefinition().model_choices,
-    "sd3": SD3ModelDefinition().model_choices,
-    "flux": FluxModelDefinition().model_choices,
-    "edit": FluxKontextModelDefinition().model_choices,
-}
-
-COMMAND_LORA_CHOICES = {
-    "sdxl": SDXLModelDefinition().lora_choices,
-    "legacy": SD15ModelDefinition().lora_choices,
-    "pony": PonyModelDefinition().lora_choices,
-    "cascade": CascadeModelDefinition().lora_choices,
-}
+# COMMAND_MODEL_CHOICES = {
+#     "sdxl": SDXLModelDefinition().model_choices,
+#     "legacy": SD15ModelDefinition().model_choices,
+#     "pony": PonyModelDefinition().model_choices,
+#     "cascade": CascadeModelDefinition().model_choices,
+#     "sd3": SD3ModelDefinition().model_choices,
+#     "flux": FluxModelDefinition().model_choices,
+#     "edit": FluxKontextModelDefinition().model_choices,
+# }
+# 
+# COMMAND_LORA_CHOICES = {
+#     "sdxl": SDXLModelDefinition().lora_choices,
+#     "legacy": SD15ModelDefinition().lora_choices,
+#     "pony": PonyModelDefinition().lora_choices,
+#     "cascade": CascadeModelDefinition().lora_choices,
+# }
 
 BASE_ARG_DESCS = {
     "prompt": "Prompt for the image being generated",

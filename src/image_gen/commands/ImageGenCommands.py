@@ -5,6 +5,7 @@ import discord
 from discord import app_commands, Attachment
 from discord.app_commands import Range
 
+from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import *
 from src.consts import *
 from src.image_gen.collage_utils import create_collage

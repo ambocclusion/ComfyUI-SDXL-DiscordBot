@@ -2,7 +2,9 @@ import configparser
 import os
 from math import floor
 
+import PIL
 import discord
+import asyncio
 
 from PIL import Image
 

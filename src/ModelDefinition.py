@@ -4,7 +4,7 @@ from discord.app_commands import Choice
 
 from src.comfyscript_utils import get_models, get_loras
 from src.defaults import get_defaults_for_command
-from src.image_gen.ImageWorkflow import ModelType, ImageWorkflow
+from src.image_gen.ImageWorkflow import ModelType
 
 
 @dataclass
@@ -14,14 +14,7 @@ class ModelDefinition:
     slash_command: str
     config_section: str
     model_folder: str
-    model_choices: list[str]
-    lora_choices: list[str]
-    argument_descriptions: dict[str, str]
-    argument_choices: dict[str, list[any]]
     
-    default_image_workflow: ImageWorkflow
-
-
     def __init__(self):
         self.model_choices = get_model_choices(self.model_folder)
         self.lora_choices = get_lora_choices(self.model_folder)
