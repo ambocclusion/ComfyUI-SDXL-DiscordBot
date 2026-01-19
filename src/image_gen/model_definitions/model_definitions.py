@@ -1,18 +1,8 @@
-from dataclasses import dataclass
-
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS, BASE_ARG_CHOICES
-from src.image_gen.sd_workflows import *
+from src.image_gen.generation_workflows.sd_workflows import *
 
-
-# SD15_GENERATION_DEFAULTS = get_defaults_for_command("SD15_GENERATION_DEFAULTS", ModelType.SD15, "legacy")
-# SDXL_GENERATION_DEFAULTS = get_defaults_for_command("SDXL_GENERATION_DEFAULTS", ModelType.SDXL, "sdxl")
-# CASCADE_GENERATION_DEFAULTS = get_defaults_for_command("CASCADE_GENERATION_DEFAULTS", ModelType.CASCADE, "cascade")
-# PONY_GENERATION_DEFAULTS = get_defaults_for_command("PONY_GENERATION_DEFAULTS", ModelType.PONY, "pony")
-# SD3_GENERATION_DEFAULTS = get_defaults_for_command("SD3_GENERATION_DEFAULTS", ModelType.SD3, "sd3")
-# FLUX_GENERATION_DEFAULTS = get_defaults_for_command("FLUX_GENERATION_DEFAULTS", ModelType.FLUX, "flux")
-# EDIT_DEFAULTS = get_defaults_for_command("EDIT_DEFAULTS", ModelType.FLUX_KONTEXT, "edit")
-
+# Image generation model definitions
 @dataclass
 class SD15ModelDefinition(ModelDefinition):
     model_name: str = "SD15"
@@ -153,9 +143,7 @@ class FluxKontextModelDefinition(ModelDefinition):
         }
 
 
-# SVD_GENERATION_DEFAULTS = get_defaults_for_command("SVD_GENERATION_DEFAULTS", ModelType.VIDEO, "video")
-# WAN_GENERATION_DEFAULTS = get_defaults_for_command("WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "wan")
-# IMAGE_WAN_GENERATION_DEFAULTS = get_defaults_for_command("IMAGE_WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "image_wan")
+# Video generation definitions
 @dataclass
 class SVDModelDefinition(ModelDefinition):
     model_name: str = "VIDEO"
@@ -216,8 +204,7 @@ class ImageWANModelDefinition(ModelDefinition):
         }
 
 
-# ADD_DETAIL_DEFAULTS = get_defaults_for_command("ADD_DETAIL_DEFAULTS", None, "add_detail")
-# UPSCALE_DEFAULTS = get_defaults_for_command("UPSCALE_DEFAULTS", None, "upscale")
+# Misc model definitions
 @dataclass
 class AddDetailModelDefinition(ModelDefinition):
     model_name: str = "ADD_DETAIL"

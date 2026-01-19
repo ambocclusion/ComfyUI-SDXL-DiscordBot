@@ -86,18 +86,18 @@ IMAGE_GEN_DESCS = {
     "num_steps": f"range [1, {MAX_STEPS}]; Number of sampling steps",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "input_file": "Image to use as input for img2img",
-    "denoise_strength": f"range [0.01, 1.0], default {SD15_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
+    "denoise_strength": f"range [0.01, 1.0], ; Strength of denoising filter during img2img. Only works when input_file is set",
     "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
-    "inpainting_detection_threshold": f"range [0, 255], default {SD15_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
+    "inpainting_detection_threshold": f"range [0, 255], default ; Detection threshold for inpainting. Only works when inpainting_prompt is set",
     **CONTROLNET_ARG_DESCS,
 }
 
 SVD_ARG_DESCS = {
     "input_file": "Starting image for video generation",
-    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should adhere to the starting image. Default: {SVD_GENERATION_DEFAULTS.cfg_scale}",
-    "min_cfg": f"Starting CFG value. Generation will move to CFG_SCALE over the length of the video. Default: {SVD_GENERATION_DEFAULTS.min_cfg}",
-    "motion": f"The amount of motion in the video. Default: {SVD_GENERATION_DEFAULTS.motion}",
-    "augmentation": f"How much the video will differ from your starting image. Introduces a lot of noise. Default: {SVD_GENERATION_DEFAULTS.augmentation}",
+    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should adhere to the starting image. ",
+    "min_cfg": f"Starting CFG value. Generation will move to CFG_SCALE over the length of the video. ",
+    "motion": f"The amount of motion in the video.",
+    "augmentation": f"How much the video will differ from your starting image. Introduces a lot of noise. ",
 }
 VIDEO_ARG_DESCS = {
     "prompt": "Prompt for the video being generated",

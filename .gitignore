@@ -8,3 +8,4 @@ config.properties
 /embedded_comfy/
 /venv/
 data/*.onnx
+.idea

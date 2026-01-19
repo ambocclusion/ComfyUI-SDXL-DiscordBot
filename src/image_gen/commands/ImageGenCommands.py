@@ -231,7 +231,7 @@ class ImageGenerationCommand(ImageGenCommands):
                 if fp2 is None:
                     return
 
-            defaults = COMMAND_DEFAULTS[self.command_name]
+            defaults = self.model_definition.default_image_workflow
             
             workflow_type = WorkflowType.txt2img if input_file is None or controlnet_type is not None else WorkflowType.img2img
             if self.command_name == "edit":

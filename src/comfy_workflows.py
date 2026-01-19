@@ -2,7 +2,6 @@ import configparser
 import os
 from math import floor
 
-import PIL
 import discord
 import asyncio
 
@@ -10,10 +9,10 @@ from PIL import Image
 
 from comfy_script.runtime import Workflow, queue
 from src.ModelDefinition import ModelDefinition
-from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
+from src.defaults import MAX_RETRIES
 from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
 from src.image_gen.nsfw_detection import check_nsfw
-from src.image_gen.sd_workflows import UpscaleWorkflow, Lora
+from src.image_gen.generation_workflows.sd_workflows import UpscaleWorkflow, Lora
 from src.util import get_loras_from_prompt
 
 config = configparser.ConfigParser()
