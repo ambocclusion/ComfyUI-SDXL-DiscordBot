@@ -17,11 +17,11 @@ logger = logging.getLogger("bot")
 
 
 class ImageGenCommands:
-    def __init__(self, tree: discord.app_commands.CommandTree):
+    def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition):
         self.tree = tree
+        self.model_definition = model_definition
 
     def add_commands(self):
-
         @self.tree.command(name="svd", description="Generate a video based on an input image using StableVideoDiffusion")
         @app_commands.describe(**SVD_ARG_DESCS)
         async def slash_command(
@@ -151,7 +151,7 @@ class ImageGenCommands:
 
             from src.comfy_workflows import do_workflow
 
-            images = await do_workflow(params, interaction)
+            images = await do_workflow(params, self.model_definition, interaction)
 
             if images is None or len(images) == 0:
                 return
@@ -183,12 +183,11 @@ class ImageGenCommands:
 
 class ImageGenerationCommand(ImageGenCommands):
     def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition):
-        super().__init__(tree)
+        super().__init__(tree, model_definition)
         self.command_name = model_definition.slash_command
         self.command_descs = model_definition.argument_descriptions
         self.command_choices = model_definition.argument_choices
         self.model_type = model_definition.model_type
-        self.model_definition = model_definition
 
     def add_commands(self):
         @self.tree.command(name=self.command_name, description=f"Generate an image using {self.command_name.upper()}")

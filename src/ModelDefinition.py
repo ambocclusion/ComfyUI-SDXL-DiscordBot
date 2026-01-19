@@ -5,6 +5,7 @@ from discord.app_commands import Choice
 from src.comfyscript_utils import get_models, get_loras
 from src.defaults import get_defaults_for_command
 from src.image_gen.ImageWorkflow import ModelType
+from src.image_gen.sd_workflows import SDWorkflow
 
 
 @dataclass
@@ -14,6 +15,7 @@ class ModelDefinition:
     slash_command: str
     config_section: str
     model_folder: str
+    workflow: type[SDWorkflow]
     
     def __init__(self):
         self.model_choices = get_model_choices(self.model_folder)

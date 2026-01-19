@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS, BASE_ARG_CHOICES
-from src.image_gen.ImageWorkflow import ModelType
+from src.image_gen.sd_workflows import *
 
 
 # SD15_GENERATION_DEFAULTS = get_defaults_for_command("SD15_GENERATION_DEFAULTS", ModelType.SD15, "legacy")
@@ -20,6 +20,7 @@ class SD15ModelDefinition(ModelDefinition):
     slash_command: str = "legacy"
     config_section: str = "SD15_GENERATION"
     model_folder: str = "15"
+    workflow: type[SDWorkflow] = SD15Workflow
 
     def __init__(self):
         super().__init__()
@@ -39,6 +40,7 @@ class SDXLModelDefinition(ModelDefinition):
     slash_command: str = "sdxl"
     config_section: str = "SDXL_GENERATION"
     model_folder: str = "sdxl"
+    workflow: type[SDWorkflow] = SDXLWorkflow
 
     def __init__(self):
         super().__init__()
@@ -58,6 +60,7 @@ class CascadeModelDefinition(ModelDefinition):
     slash_command: str = "cascade"
     config_section: str = "CASCADE_GENERATION"
     model_folder: str = "cascade"
+    workflow: type[SDWorkflow] = SDCascadeWorkflow
 
     def __init__(self):
         super().__init__()
@@ -77,6 +80,7 @@ class PonyModelDefinition(ModelDefinition):
     slash_command: str = "pony"
     config_section: str = "PONY_GENERATION"
     model_folder: str = "pony"
+    workflow: type[SDWorkflow] = PonyWorkflow
 
     def __init__(self):
         super().__init__()
@@ -96,6 +100,7 @@ class SD3ModelDefinition(ModelDefinition):
     slash_command: str = "sd3"
     config_section: str = "SD3_GENERATION"
     model_folder: str = "sd3"
+    workflow: type[SDWorkflow] = SD3Workflow
 
     def __init__(self):
         super().__init__()
@@ -115,6 +120,7 @@ class FluxModelDefinition(ModelDefinition):
     slash_command: str = "flux"
     config_section: str = "FLUX_GENERATION"
     model_folder: str = "flux"
+    workflow: type[SDWorkflow] = FluxWorkflow
 
     def __init__(self):
         super().__init__()
@@ -134,6 +140,7 @@ class FluxKontextModelDefinition(ModelDefinition):
     slash_command: str = "edit"
     config_section: str = "EDIT_GENERATION"
     model_folder: str = "flux_kontext"
+    workflow: type[SDWorkflow] = FluxWorkflow
 
     def __init__(self):
         super().__init__()
@@ -156,6 +163,7 @@ class SVDModelDefinition(ModelDefinition):
     slash_command: str = "video"
     config_section: str = "SVD_GENERATION"
     model_folder: str = "video"
+    workflow: type[SDWorkflow] = None
 
     def __init__(self):
         super().__init__()
@@ -175,6 +183,7 @@ class WANModelDefinition(ModelDefinition):
     slash_command: str = "wan"
     config_section: str = "WAN_GENERATION"
     model_folder: str = "wan"
+    workflow: type[SDWorkflow] = None
 
     def __init__(self):
         super().__init__()
@@ -194,6 +203,7 @@ class ImageWANModelDefinition(ModelDefinition):
     slash_command: str = "image_wan"
     config_section: str = "IMAGE_WAN_GENERATION"
     model_folder: str = "image_wan"
+    workflow: type[SDWorkflow] = None
 
     def __init__(self):
         super().__init__()
@@ -215,7 +225,8 @@ class AddDetailModelDefinition(ModelDefinition):
     slash_command: str = "add_detail"
     config_section: str = "ADD_DETAIL"
     model_folder: str = None
-    
+    workflow: type[SDWorkflow] = None
+
 
 @dataclass
 class UpscaleModelDefinition(ModelDefinition):
@@ -224,3 +235,4 @@ class UpscaleModelDefinition(ModelDefinition):
     slash_command: str = "upscale"
     config_section: str = "UPSCALE"
     model_folder: str = None
+    workflow: type[SDWorkflow] = None

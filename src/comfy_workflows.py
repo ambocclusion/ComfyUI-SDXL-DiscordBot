@@ -8,20 +8,13 @@ import asyncio
 
 from PIL import Image
 
+from comfy_script.runtime import Workflow, queue
+from src.ModelDefinition import ModelDefinition
 from src.defaults import UPSCALE_DEFAULTS, MAX_RETRIES
+from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
 from src.image_gen.nsfw_detection import check_nsfw
-from src.image_gen.sd_workflows import *
+from src.image_gen.sd_workflows import UpscaleWorkflow, Lora
 from src.util import get_loras_from_prompt
-
-model_type_to_workflow = {
-    ModelType.SD15: SD15Workflow,
-    ModelType.SDXL: SDXLWorkflow,
-    ModelType.CASCADE: SDCascadeWorkflow,
-    ModelType.PONY: PonyWorkflow,
-    ModelType.SD3: SD3Workflow,
-    ModelType.FLUX: FluxWorkflow,
-    ModelType.FLUX_KONTEXT: FluxWorkflow
-}
 
 config = configparser.ConfigParser()
 config.read("config.properties", encoding="utf8")
@@ -36,9 +29,9 @@ t2v_wan_distilled = config["WAN_GENERATION_DEFAULTS"]["USE_DISTILLED_LORA"].lowe
 loop = None
 
 
-async def _do_txt2img(params: ImageWorkflow, interaction):
+async def _do_txt2img(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
-        workflow = model_type_to_workflow[params.model_type](params)
+        workflow = model_definition.workflow(params)
         workflow.create_latents()
         workflow.condition_prompts()
         workflow.sample(use_ays=params.use_align_your_steps)
@@ -50,9 +43,9 @@ async def _do_txt2img(params: ImageWorkflow, interaction):
     return image_batch
 
 
-async def _do_img2img(params: ImageWorkflow, interaction):
+async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
-        workflow = model_type_to_workflow[params.model_type](params)
+        workflow = model_definition.workflow(params)
         image_input = LoadImage(params.filename)[0]
         workflow.create_img2img_latents(image_input)
         if params.inpainting_prompt:
@@ -66,9 +59,9 @@ async def _do_img2img(params: ImageWorkflow, interaction):
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 
-async def _do_edit(params: ImageWorkflow, interaction):
+async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
-        workflow = model_type_to_workflow[params.model_type](params)
+        workflow = model_definition.workflow(params)
         image_inputs = [LoadImage(filename)[0] for filename in [params.filename, params.filename2] if filename is not None]
         if len(image_inputs)> 1:
             image_input = ImageStitch(image_inputs[0], 'right', True, 0, 'white', image_inputs[1])
@@ -86,7 +79,7 @@ async def _do_edit(params: ImageWorkflow, interaction):
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 
-async def _do_upscale(params: ImageWorkflow, interaction):
+async def _do_upscale(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     workflow = UpscaleWorkflow()
     workflow.load_image(params.filename)
     workflow.upscale(UPSCALE_DEFAULTS.model, 2.0)
@@ -95,9 +88,9 @@ async def _do_upscale(params: ImageWorkflow, interaction):
     return await results.get(0)
 
 
-async def _do_add_detail(params: ImageWorkflow, interaction):
+async def _do_add_detail(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
-        workflow = model_type_to_workflow[params.model_type](params)
+        workflow = model_definition.workflow(params)
         image_input = LoadImage(params.filename)[0]
         workflow.create_img2img_latents(image_input)
         workflow.condition_prompts()
@@ -111,9 +104,9 @@ async def _do_add_detail(params: ImageWorkflow, interaction):
     return image_batch
 
 
-async def _do_image_mashup(params: ImageWorkflow, interaction):
+async def _do_image_mashup(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
-        workflow = model_type_to_workflow[params.model_type](params)
+        workflow = model_definition.workflow(params)
         image_inputs = [LoadImage(filename)[0] for filename in [params.filename, params.filename2] if filename is not None]
         workflow.create_latents()
         workflow.condition_prompts()
@@ -127,7 +120,7 @@ async def _do_image_mashup(params: ImageWorkflow, interaction):
     return image_batch
 
 
-async def _do_svd(params: ImageWorkflow, interaction):
+async def _do_svd(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     import PIL
 
     with open(params.filename, "rb") as f:
@@ -160,7 +153,7 @@ async def _do_svd(params: ImageWorkflow, interaction):
     final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
     return [final_video]
 
-async def _do_image_wan(params: ImageWorkflow, interaction):
+async def _do_image_wan(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     import PIL
     max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
     output_path = ''
@@ -222,7 +215,7 @@ async def _do_image_wan(params: ImageWorkflow, interaction):
     return [final_video]
 
 
-async def _do_wan(params: ImageWorkflow, interaction):
+async def _do_wan(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     import PIL
 
     with Workflow() as wf:
@@ -316,7 +309,7 @@ def do_preview(task, node_id, image, interaction, prompt):
         print(e)
 
 
-async def do_workflow(params: ImageWorkflow, interaction: discord.Interaction):
+async def do_workflow(params: ImageWorkflow, model_definition: ModelDefinition, interaction: discord.Interaction):
     global user_queues, loop
     loop = asyncio.get_event_loop()
     user = interaction.user
@@ -362,7 +355,7 @@ async def do_workflow(params: ImageWorkflow, interaction: discord.Interaction):
             params.style_prompt = None
             params.negative_style_prompt = None
 
-            result = await workflow_type_to_method[params.workflow_type](params, interaction)
+            result = await workflow_type_to_method[params.workflow_type](params, model_definition, interaction)
 
             user_queues[user.id] -= 1
             await interaction.edit_original_response(attachments=[])

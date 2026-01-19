@@ -26,7 +26,7 @@ async def on_ready():
     from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, ImageGenCommands
     commands = []
     
-    commands.append(ImageGenCommands(tree))
+    commands.append(ImageGenCommands(tree, None))
     from src.image_gen.model_definitions import model_definitions
     commands.append(ImageGenerationCommand(tree, model_definitions.SD15ModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.SDXLModelDefinition()))
