@@ -119,39 +119,6 @@ async def _do_image_mashup(params: ImageWorkflow, model_definition: ModelDefinit
     return image_batch
 
 
-async def _do_svd(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
-    import PIL
-
-    with open(params.filename, "rb") as f:
-        image = PIL.Image.open(f)
-        width = image.width
-        height = image.height
-        padding = 0
-        if width / height <= 1:
-            padding = height // 2
-
-    with Workflow() as wf:
-        image = LoadImage(params.filename)[0]
-        image, _ = ImagePadForOutpaint(image, padding, 0, padding, 0, 40)
-        model, clip_vision, vae = ImageOnlyCheckpointLoader(params.model)
-        model = VideoLinearCFGGuidance(model, params.min_cfg)
-        positive, negative, latent = SVDImg2vidConditioning(clip_vision, image, vae, 1024, 576, 25, params.motion, 8, params.augmentation)
-        if use_align_your_steps:
-            scheduler = AlignYourStepsScheduler("SVD", params.num_steps)
-            sampler = KSamplerSelect("euler")
-            latent, _ = SamplerCustom(model, True, params.seed, params.cfg_scale, positive, negative, sampler, scheduler, latent)
-        else:
-            latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
-        image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
-        preview = PreviewImage(image)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    await preview._wait()
-    await video._wait()
-    results = video.wait()._output
-    final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
-    return [final_video]
-
 async def _do_image_wan(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     import PIL
     max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
