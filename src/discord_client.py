@@ -23,10 +23,9 @@ async def on_ready():
 
     await asyncio.sleep(1)
     print("server start")
-    from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, ImageGenCommands
+    from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, WANCommand, SVDCommand
     commands = []
     
-    commands.append(ImageGenCommands(tree, None))
     from src.image_gen.model_definitions import model_definitions
     commands.append(ImageGenerationCommand(tree, model_definitions.SD15ModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.SDXLModelDefinition()))
@@ -35,6 +34,9 @@ async def on_ready():
     commands.append(ImageGenerationCommand(tree, model_definitions.SD3ModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.FluxModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.FluxKontextModelDefinition()))
+    
+    commands.append(WANCommand(tree, model_definitions.WANModelDefinition()))
+    commands.append(SVDCommand(tree, model_definitions.SVDModelDefinition()))
     
     # remove commands that have no models available
     commands = [cmd for cmd in commands if not isinstance(cmd, ImageGenerationCommand) or len(cmd.model_definition.model_choices) > 0]

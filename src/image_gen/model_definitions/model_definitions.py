@@ -1,6 +1,8 @@
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS, BASE_ARG_CHOICES
 from src.image_gen.generation_workflows.sd_workflows import *
+from src.image_gen.generation_workflows.video_workflows import *
+
 
 # Image generation model definitions
 @dataclass
@@ -151,7 +153,7 @@ class SVDModelDefinition(ModelDefinition):
     slash_command: str = "video"
     config_section: str = "SVD_GENERATION"
     model_folder: str = "video"
-    workflow: type[SDWorkflow] = None
+    workflow: type[SDWorkflow] = SVDWorkflow
 
     def __init__(self):
         super().__init__()
@@ -171,7 +173,7 @@ class WANModelDefinition(ModelDefinition):
     slash_command: str = "wan"
     config_section: str = "WAN_GENERATION"
     model_folder: str = "wan"
-    workflow: type[SDWorkflow] = None
+    workflow: type[SDWorkflow] = WANWorkflow
 
     def __init__(self):
         super().__init__()
@@ -191,7 +193,7 @@ class ImageWANModelDefinition(ModelDefinition):
     slash_command: str = "image_wan"
     config_section: str = "IMAGE_WAN_GENERATION"
     model_folder: str = "image_wan"
-    workflow: type[SDWorkflow] = None
+    workflow: type[SDWorkflow] = WANWorkflow
 
     def __init__(self):
         super().__init__()

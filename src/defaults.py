@@ -14,7 +14,6 @@ def get_default_from_config(section : str, option : str, default = None) -> str:
     return config[section][option]
 
 def get_defaults_for_command(section: str, model_type: ModelType, slash_command: str) -> ImageWorkflow:
-    print(f"Getting defaults for section: {section}, model_type: {model_type}, slash_command: {slash_command}")
     workflow = ImageWorkflow(
         model_type,
         None, # workflow_type

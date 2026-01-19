@@ -130,10 +130,15 @@ class SDWorkflow:
 
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        return SaveImage(image, file_name)
+        self.output_images = SaveImage(image, file_name), None
+        return self.output_images
     
     def resize_edit_image(self, input_image: Image):
         return FluxKontextImageScale(input_image)
+
+    async def wait(self):
+        return self.output_images
+
 
 class SD15Workflow(SDWorkflow):
     pass

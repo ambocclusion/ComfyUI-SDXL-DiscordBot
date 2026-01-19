@@ -19,9 +19,6 @@ class WorkflowType(Enum):
     add_detail = "add_detail",
     image_mashup = "image_mashup",
     edit = "edit",
-    svd = "svd",
-    wan = "wan",
-    image_wan = "image_wan"
 
 sd_aspect_ratios = {
     "1:1": (1024, 1024),

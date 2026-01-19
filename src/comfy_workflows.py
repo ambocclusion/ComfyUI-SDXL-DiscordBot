@@ -2,12 +2,14 @@ import configparser
 import os
 from math import floor
 
+import PIL.Image
 import discord
 import asyncio
 
 from PIL import Image
 
 from comfy_script.runtime import Workflow, queue
+from comfy_script.runtime.nodes import LoadImage
 from src.ModelDefinition import ModelDefinition
 from src.defaults import MAX_RETRIES
 from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
@@ -19,11 +21,6 @@ config = configparser.ConfigParser()
 config.read("config.properties", encoding="utf8")
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 use_align_your_steps = config["SVD_GENERATION_DEFAULTS"]["USE_ALIGN_YOUR_STEPS"].lower()
-image_wan_teacache = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
-t2v_wan_teacache = config["WAN_GENERATION_DEFAULTS"]["USE_TEACACHE"].lower()
-image_wan_triton = config["IMAGE_WAN_GENERATION_DEFAULTS"]["USE_TRITON"].lower()
-t2v_wan_triton = config["WAN_GENERATION_DEFAULTS"]["USE_TRITON"].lower()
-t2v_wan_distilled = config["WAN_GENERATION_DEFAULTS"]["USE_DISTILLED_LORA"].lower()
 
 loop = None
 
@@ -34,12 +31,20 @@ async def _do_txt2img(params: ImageWorkflow, model_definition: ModelDefinition, 
         workflow.create_latents()
         workflow.condition_prompts()
         workflow.sample(use_ays=params.use_align_your_steps)
-        images = workflow.decode_and_save("final_output")
+        images, file_names = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
+    # TODO: Change this .wait function into a `get_results` function instead
+    await workflow.wait()
     results = await images
     await results
-    image_batch = [await results.get(i) for i in range(params.batch_size)]
-    return image_batch
+    if file_names is None:
+        image_batch = [await results.get(i) for i in range(params.batch_size)]
+        return image_batch
+    else:
+        await file_names._wait()
+        file_name_results = file_names.wait()._output
+        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
+        return [image_batch]
 
 
 async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
@@ -50,13 +55,20 @@ async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, 
         if params.inpainting_prompt:
             workflow.mask_for_inpainting(image_input)
         workflow.condition_prompts()
-        workflow.sample()
-        images = workflow.decode_and_save("final_output")
+        workflow.sample(params.use_align_your_steps)
+        images, file_names = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
+    
     results = await images
     await results
-    image_batch = [await results.get(i) for i in range(params.batch_size)]
-    return image_batch
+    if file_names is None:
+        image_batch = [await results.get(i) for i in range(params.batch_size)]
+        return image_batch
+    else:
+        await file_names._wait()
+        file_name_results = file_names.wait()._output
+        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
+        return [image_batch]
 
 async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
@@ -119,116 +131,6 @@ async def _do_image_mashup(params: ImageWorkflow, model_definition: ModelDefinit
     return image_batch
 
 
-async def _do_image_wan(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
-    import PIL
-    max_width = int(config["IMAGE_WAN_GENERATION_DEFAULTS"]["MAX_WIDTH"])
-    output_path = ''
-    with open(params.filename, "rb") as f:
-        image = PIL.Image.open(f)
-        width = image.width
-        height = image.height
-        if params.crop_image or width > max_width or height > max_width:
-            from src.imgutils import smart_crop, smart_resize
-            image = smart_crop(image)
-            image = smart_resize(image, max_width)
-            # Save the resized image
-            output_path, filename = os.path.split(params.filename)
-            new_filename = f"wan_{filename}"
-            output_path = output_path + "/" + new_filename
-            image.save(fp=output_path)
-        width = image.width
-        height = image.height
-
-    with Workflow() as wf:
-        if output_path != '':
-            image = LoadImage(output_path)[0]
-        else:
-            image = LoadImage(params.filename)[0]
-        if params.model.endswith(".gguf"):
-            model = UnetLoaderGGUF(params.model)
-        else:
-            model = UNETLoader(params.model)
-        clip_model = params.clip_model
-        clip = CLIPLoaderGGUF(clip_model, "wan")
-        if params.lora_dict:
-            for lora in params.lora_dict:
-                if lora.name == None or lora.name == "None":
-                    continue
-                model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        if image_wan_teacache == "true":
-            # Is it a 14B model?
-            if "14B" in params.model:
-                model = EasyCache(model, 0.05, 0.15, 0.95, True)
-            else:
-            # Otherwise assume model is based on Wan 5B.
-                model = EasyCache(model, 0.15, 0.25, 0.95, True)
-        if image_wan_triton == "true":
-            model = CompileModel(model)
-        model = ModelSamplingSD3(model, 8)
-        vae = VAELoader("wan2.2_vae.safetensors")
-        positive = CLIPTextEncode(params.prompt, clip)
-        negative = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
-        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1, image)
-        latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, positive, negative, latent, 1)
-        image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, 24, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
-        preview = PreviewImage(image)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    await preview._wait()
-    await video._wait()
-    results = video.wait()._output
-    final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
-    return [final_video]
-
-
-async def _do_wan(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
-    import PIL
-
-    with Workflow() as wf:
-        if params.model.endswith(".gguf"):
-            model = UnetLoaderGGUF(params.model)
-        else:
-            model = UNETLoader(params.model)
-        clip_model = params.clip_model
-        clip = CLIPLoaderGGUF(clip_model, "wan")
-        if params.lora_dict:
-            for lora in params.lora_dict:
-                if lora.name == None or lora.name == "None":
-                    continue
-                model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
-        if t2v_wan_teacache == "true":
-            if "14B" in params.model:
-                model = EasyCache(model, 0.06, 0.15, 0.95, True)
-            else:
-                model = EasyCache(model, 0.15, 0.25, 0.95, True)
-        model = ModelSamplingSD3(model, 8)
-        if t2v_wan_distilled == "true":
-            model_distilled = LoraLoaderModelOnly(model, 'wan-1.3b-cfgdistill-video.safetensors', 1)
-        if t2v_wan_triton == "true":
-            model = CompileModel(model)
-            if t2v_wan_distilled == "true":
-                model = CompileModel(model_distilled)
-        vae = VAELoader("wan2.2_vae.safetensors")
-        conditioning = CLIPTextEncode(params.prompt, clip)
-        negative_conditioning = CLIPTextEncode(params.negative_prompt or "静态", clip)  # 静态 means "static"
-        aspect_ratio = 1.77
-        width = params.video_width
-        height = floor(width / aspect_ratio)
-        latent = Wan22ImageToVideoLatent(vae, width, height, params.video_length, 1)
-        if t2v_wan_distilled == "true":
-            latent = KSamplerAdvanced(model, 'enable', params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 0, 10, 'enable')
-            latent = KSamplerAdvanced(model_distilled, 'disable', 0, params.num_steps, 1, 'gradient_estimation', 'normal', conditioning, conditioning, latent, 10, 1000, 'disable')
-        else:
-            latent = KSampler(model, params.seed, params.num_steps, params.cfg_scale, params.sampler, params.scheduler, conditioning, negative_conditioning, latent, 1)
-        image2 = VAEDecode(latent, vae)
-        video = VHSVideoCombine(image2, params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None)
-    wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    await video._wait()
-    results = video.wait()._output
-    final_video = PIL.Image.open(os.path.join(comfy_root_directory, "output", results["gifs"][0]["filename"]))
-    return [final_video]
-
-
 def process_prompt_with_llm(positive_prompt: str, seed: int, profile: str):
     from src.defaults import llm_prompt, llm_parameters
 
@@ -252,9 +154,6 @@ workflow_type_to_method = {
     WorkflowType.upscale: _do_upscale,
     WorkflowType.add_detail: _do_add_detail,
     WorkflowType.image_mashup: _do_image_mashup,
-    WorkflowType.svd: _do_svd,
-    WorkflowType.wan: _do_wan,
-    WorkflowType.image_wan: _do_image_wan,
     WorkflowType.edit: _do_edit
 }
 

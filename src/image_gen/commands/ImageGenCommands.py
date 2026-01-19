@@ -22,101 +22,7 @@ class ImageGenCommands:
         self.model_definition = model_definition
 
     def add_commands(self):
-        @self.tree.command(name="svd", description="Generate a video based on an input image using StableVideoDiffusion")
-        @app_commands.describe(**SVD_ARG_DESCS)
-        async def slash_command(
-                interaction: discord.Interaction,
-                input_file: Attachment,
-                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-                min_cfg: Range[float, 1.0, MAX_CFG] = None,
-                motion: Range[int, 1, 127] = None,
-                augmentation: Range[float, 0, 10] = None,
-                seed: int = None,
-        ):
-            if input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
-                await interaction.response.send_message(
-                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
-                    ephemeral=True,
-                )
-                return
-
-            params = ImageWorkflow(
-                ModelType.VIDEO,
-                WorkflowType.svd,
-                "",
-                "",
-                model=SVD_GENERATION_DEFAULTS.model,
-                num_steps=SVD_GENERATION_DEFAULTS.num_steps,
-                cfg_scale=cfg_scale or SVD_GENERATION_DEFAULTS.cfg_scale,
-                seed=seed,
-                slash_command="svd",
-                sampler=SVD_GENERATION_DEFAULTS.sampler,
-                scheduler=SVD_GENERATION_DEFAULTS.scheduler,
-                min_cfg=min_cfg or SVD_GENERATION_DEFAULTS.min_cfg,
-                motion=motion or SVD_GENERATION_DEFAULTS.motion,
-                augmentation=augmentation or SVD_GENERATION_DEFAULTS.augmentation,
-                fps=SVD_GENERATION_DEFAULTS.fps,
-                filename=await process_attachment(input_file, interaction),
-            )
-            await self._do_request(
-                interaction,
-                f"🎥{interaction.user.mention} asked me to create a video with SVD! {random.choice(generation_messages)} 🎥",
-                f"{interaction.user.mention} asked me to create video with SVD! {random.choice(completion_messages)} 🎥",
-                "video",
-                params,
-            )
-
-        @self.tree.command(name="video", description="Generate a video based on a prompt")
-        @app_commands.describe(**VIDEO_ARG_DESCS)
-        @app_commands.choices(**VIDEO_ARG_CHOICES)
-        async def slash_command(
-                interaction: discord.Interaction,
-                prompt: str,
-                negative_prompt: str = None,
-                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
-                input_file: Attachment = None,
-                seed: int = None,
-                lora: Choice[str] = None,
-        ):
-            if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
-                await interaction.response.send_message(
-                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
-                    ephemeral=True,
-                )
-                return
-
-            generation_defaults = WAN_GENERATION_DEFAULTS if input_file is None else IMAGE_WAN_GENERATION_DEFAULTS
-
-            params = ImageWorkflow(
-                ModelType.VIDEO,
-                WorkflowType.wan if input_file == None else WorkflowType.image_wan,
-                prompt,
-                negative_prompt,
-                generation_defaults.model,
-                unpack_choices(lora, None),
-                [1.0, 1.0],
-                num_steps=generation_defaults.num_steps,
-                cfg_scale=cfg_scale or generation_defaults.cfg_scale,
-                seed=seed,
-                slash_command="video",
-                sampler=generation_defaults.sampler,
-                scheduler=generation_defaults.scheduler,
-                fps=generation_defaults.fps,
-                filename=await process_attachment(input_file, interaction) if input_file != None else None,
-                style_prompt=generation_defaults.style_prompt,
-                negative_style_prompt=generation_defaults.negative_style_prompt,
-                video_width=generation_defaults.video_width,
-                video_length=generation_defaults.video_length,
-                clip_model=generation_defaults.clip_model,
-                crop_image=generation_defaults.crop_image,
-            )
-            await self._do_request(
-                interaction,
-                f'🎥{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(generation_messages)} 🎥',
-                f'{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(completion_messages)} 🎥',
-                "video",
-                params,
-            )
+        pass
 
     async def _do_request(
             self,
@@ -294,5 +200,116 @@ class ImageGenerationCommand(ImageGenCommands):
                 f'🖌️{interaction.user.mention} asked me to imagine "{prompt}" using {self.command_name.upper()}! {random.choice(generation_messages)} 🖌️',
                 f'🖌️ {interaction.user.mention} asked me to imagine "{prompt}" using {self.command_name.upper()}! {random.choice(completion_messages)}. 🖌️',
                 self.command_name,
+                params,
+            )
+            
+            
+class SVDCommand(ImageGenCommands):
+    def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition):
+        super().__init__(tree, model_definition)
+
+    def add_commands(self):
+        @self.tree.command(name="svd", description="Generate a video based on an input image using StableVideoDiffusion")
+        @app_commands.describe(**SVD_ARG_DESCS)
+        async def slash_command(
+                interaction: discord.Interaction,
+                input_file: Attachment,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                min_cfg: Range[float, 1.0, MAX_CFG] = None,
+                motion: Range[int, 1, 127] = None,
+                augmentation: Range[float, 0, 10] = None,
+                seed: int = None,
+        ):
+            if input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
+                    ephemeral=True,
+                )
+                return
+
+            defaults = self.model_definition.default_image_workflow
+
+            params = ImageWorkflow(
+                ModelType.VIDEO,
+                WorkflowType.img2img,
+                "",
+                "",
+                model=defaults.model,
+                num_steps=defaults.num_steps,
+                cfg_scale=cfg_scale or defaults.cfg_scale,
+                denoise_strength=1.0,
+                seed=seed,
+                slash_command="svd",
+                sampler=defaults.sampler,
+                scheduler=defaults.scheduler,
+                min_cfg=min_cfg or defaults.min_cfg,
+                motion=motion or defaults.motion,
+                augmentation=augmentation or defaults.augmentation,
+                fps=defaults.fps,
+                filename=await process_attachment(input_file, interaction),
+            )
+            await self._do_request(
+                interaction,
+                f"🎥{interaction.user.mention} asked me to create a video with SVD! {random.choice(generation_messages)} 🎥",
+                f"{interaction.user.mention} asked me to create video with SVD! {random.choice(completion_messages)} 🎥",
+                "video",
+                params,
+            )
+
+class WANCommand(ImageGenCommands):
+    def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition):
+        super().__init__(tree, model_definition)
+
+    def add_commands(self):
+        @self.tree.command(name="video", description="Generate a video based on a prompt")
+        @app_commands.describe(**VIDEO_ARG_DESCS)
+        @app_commands.choices(**VIDEO_ARG_CHOICES)
+        async def slash_command(
+                interaction: discord.Interaction,
+                prompt: str,
+                negative_prompt: str = None,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                input_file: Attachment = None,
+                seed: int = None,
+                lora: Choice[str] = None,
+        ):
+            if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
+                    ephemeral=True,
+                )
+                return
+
+            generation_defaults = self.model_definition.default_image_workflow
+
+            params = ImageWorkflow(
+                ModelType.VIDEO,
+                WorkflowType.txt2img if input_file == None else WorkflowType.img2img,
+                prompt,
+                negative_prompt,
+                generation_defaults.model,
+                unpack_choices(lora, None),
+                [1.0, 1.0],
+                num_steps=generation_defaults.num_steps,
+                cfg_scale=cfg_scale or generation_defaults.cfg_scale,
+                seed=seed,
+                slash_command="video",
+                sampler=generation_defaults.sampler,
+                scheduler=generation_defaults.scheduler,
+                fps=generation_defaults.fps,
+                vae=generation_defaults.vae,
+                filename=await process_attachment(input_file, interaction) if input_file != None else None,
+                style_prompt=generation_defaults.style_prompt,
+                negative_style_prompt=generation_defaults.negative_style_prompt,
+                video_width=generation_defaults.video_width,
+                video_length=generation_defaults.video_length,
+                clip_model=generation_defaults.clip_model,
+                crop_image=generation_defaults.crop_image,
+            )
+            await self._do_request(
+                interaction,
+                f'🎥{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(generation_messages)} 🎥',
+                f'{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(completion_messages)} 🎥',
+                "video",
                 params,
             )
