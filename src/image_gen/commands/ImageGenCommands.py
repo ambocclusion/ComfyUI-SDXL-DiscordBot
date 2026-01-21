@@ -31,6 +31,7 @@ class ImageGenCommands:
             completion_message: str,
             command_name: str,
             params: ImageWorkflow,
+            model_definition: ModelDefinition,
     ):
         await interaction.response.defer()
 
@@ -79,7 +80,7 @@ class ImageGenCommands:
             if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
                 is_nsfw = check_nsfw(collage_path, params.prompt)
 
-            buttons = Buttons(params, images, interaction.user, is_nsfw, command=command_name)
+            buttons = Buttons(params, model_definition, images, interaction.user, is_nsfw, command=command_name)
 
             await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
         except Exception as e:
@@ -201,6 +202,7 @@ class ImageGenerationCommand(ImageGenCommands):
                 f'🖌️ {interaction.user.mention} asked me to imagine "{prompt}" using {self.command_name.upper()}! {random.choice(completion_messages)}. 🖌️',
                 self.command_name,
                 params,
+                self.model_definition,
             )
             
             
@@ -254,6 +256,7 @@ class SVDCommand(ImageGenCommands):
                 f"{interaction.user.mention} asked me to create video with SVD! {random.choice(completion_messages)} 🎥",
                 "video",
                 params,
+                self.model_definition,
             )
 
 class WANCommand(ImageGenCommands):
@@ -312,4 +315,5 @@ class WANCommand(ImageGenCommands):
                 f'{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(completion_messages)} 🎥',
                 "video",
                 params,
+                self.model_definition,
             )

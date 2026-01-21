@@ -8,12 +8,17 @@ import discord
 import discord.ext
 from discord import SelectOption
 
+from src.ModelDefinition import ModelDefinition
 from src.comfy_workflows import do_workflow
 from src.defaults import *
 from src.image_gen.collage_utils import create_collage, create_gif_collage
 from src.image_gen.nsfw_detection import check_nsfw
 from src.util import get_filename, build_command, get_workflow
 
+UPSCALE_DEFAULTS = get_defaults_for_command(f"UPSCALE_DEFAULTS", None, "upscale")
+ADD_DETAIL_DEFAULTS = get_defaults_for_command(f"ADD_DETAIL_DEFAULTS", None, "upscale") 
+SDXL_GENERATION_DEFAULTS = get_defaults_for_command(f"SDXL_GENERATION_DEFAULTS", ModelType.SDXL, "sdxl")
+SD15_GENERATION_DEFAULTS = get_defaults_for_command(f"SD15_GENERATION_DEFAULTS", ModelType.SD15, "legacy")
 
 # <editor-fold desc="ButtonDecorators">
 class EditableButton:
@@ -56,7 +61,7 @@ class RerollableButton:
             is_nsfw = check_nsfw(collage_path, params.prompt)
 
         final_message = f'{interaction.user.mention} asked me to re-imagine "{params.prompt}", here is what I imagined for them. ' f"Seed: {params.seed}"
-        buttons = Buttons(params, images, interaction.user, is_nsfw, command=self.command)
+        buttons = Buttons(params, self.model_definition, images, interaction.user, is_nsfw, command=self.command)
 
         await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 
@@ -143,6 +148,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
     def __init__(
             self,
             params,
+            model_definition,
             images,
             author,
             is_nsfw,
@@ -155,6 +161,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
 
         super().__init__(timeout=timeout)
         self.params = params
+        self.model_definition = model_definition
         self.images = images
         self.author = author
         self.command = command
@@ -222,7 +229,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         if not is_nsfw and config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
             is_nsfw = check_nsfw(collage_path, params.prompt)
         
-        buttons = Buttons(params, images, interaction.user, is_nsfw, command=self.command)
+        buttons = Buttons(params, self.model_definition, images, interaction.user, is_nsfw, command=self.command)
 
         await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 
@@ -240,7 +247,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
 
         params.filename = os.path.join(os.getcwd(), f"out/images_{get_filename(interaction, self.params)}_{index}.png")
         self.images[index].save(fp=params.filename)
-        upscaled_image = await do_workflow(params, interaction)
+        upscaled_image = await do_workflow(params, self.model_definition, interaction)
 
         if upscaled_image is None:
             return
@@ -339,9 +346,10 @@ class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
 
 
 class EditResponse(discord.ui.View):
-    def __init__(self, params: ImageWorkflow, command: str, images):
+    def __init__(self, params: ImageWorkflow, model_definition : ModelDefinition, command: str, images):
         super().__init__(timeout=None)
         self.params = params
+        self.model_definition = model_definition
         self.command = command
         self.images = images
 
@@ -600,7 +608,7 @@ class EditResponse(discord.ui.View):
         if config["NSFW_DETECTION"]["NSFW_DETECTION_ENABLED"] == "True":
             is_nsfw = check_nsfw(collage_path, params.prompt)
             
-        buttons = Buttons(params, images, interaction.user, is_nsfw, command=self.command)
+        buttons = Buttons(params, self.model_definition, images, interaction.user, is_nsfw, command=self.command)
 
         await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
 

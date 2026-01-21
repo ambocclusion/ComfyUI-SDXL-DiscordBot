@@ -13,8 +13,9 @@ from comfy_script.runtime.nodes import LoadImage
 from src.ModelDefinition import ModelDefinition
 from src.defaults import MAX_RETRIES
 from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
+from src.image_gen.model_definitions.model_definitions import UpscaleModelDefinition
 from src.image_gen.nsfw_detection import check_nsfw
-from src.image_gen.generation_workflows.sd_workflows import UpscaleWorkflow, Lora
+from src.image_gen.generation_workflows.image_workflows import UpscaleWorkflow, Lora
 from src.util import get_loras_from_prompt
 
 config = configparser.ConfigParser()
@@ -31,20 +32,12 @@ async def _do_txt2img(params: ImageWorkflow, model_definition: ModelDefinition, 
         workflow.create_latents()
         workflow.condition_prompts()
         workflow.sample(use_ays=params.use_align_your_steps)
-        images, file_names = workflow.decode_and_save("final_output")
+        images = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    # TODO: Change this .wait function into a `get_results` function instead
-    await workflow.wait()
-    results = await images
+    results = await workflow.wait_for_result()
     await results
-    if file_names is None:
-        image_batch = [await results.get(i) for i in range(params.batch_size)]
-        return image_batch
-    else:
-        await file_names._wait()
-        file_name_results = file_names.wait()._output
-        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
-        return [image_batch]
+    image_batch = [await results.get(i) for i in range(params.batch_size)]
+    return image_batch
 
 
 async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
@@ -58,17 +51,11 @@ async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, 
         workflow.sample(params.use_align_your_steps)
         images, file_names = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    
-    results = await images
+
+    results = await workflow.wait_for_result()
     await results
-    if file_names is None:
-        image_batch = [await results.get(i) for i in range(params.batch_size)]
-        return image_batch
-    else:
-        await file_names._wait()
-        file_name_results = file_names.wait()._output
-        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
-        return [image_batch]
+    image_batch = [await results.get(i) for i in range(params.batch_size)]
+    return image_batch
 
 async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     with Workflow() as wf:
@@ -85,15 +72,14 @@ async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, int
         workflow.sample()
         images = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-    results = await images
-    await results
+    results = await workflow.wait_for_result()
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 
 async def _do_upscale(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
     workflow = UpscaleWorkflow()
     workflow.load_image(params.filename)
-    workflow.upscale(UPSCALE_DEFAULTS.model, 2.0)
+    workflow.upscale(model_definition.default_image_workflow.model, 2.0)
     image = workflow.save("final_output")
     results = await image._wait()
     return await results.get(0)

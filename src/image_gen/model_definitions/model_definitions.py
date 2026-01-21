@@ -1,6 +1,6 @@
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import BASE_ARG_DESCS, IMAGE_GEN_DESCS, BASE_ARG_CHOICES
-from src.image_gen.generation_workflows.sd_workflows import *
+from src.image_gen.generation_workflows.image_workflows import *
 from src.image_gen.generation_workflows.video_workflows import *
 
 

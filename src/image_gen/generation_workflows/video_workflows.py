@@ -1,11 +1,16 @@
 import os
+import configparser
 from math import floor
 
 import PIL
 from PIL import Image
 
 from comfy_script.runtime.nodes import *
-from src.image_gen.generation_workflows.sd_workflows import SDWorkflow
+from src.image_gen.generation_workflows.image_workflows import SDWorkflow
+from src.util import read_config
+
+config = read_config()
+comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 
 
 class VideoWorkflow(SDWorkflow):
@@ -13,10 +18,12 @@ class VideoWorkflow(SDWorkflow):
         image = VAEDecode(self.output_latents, self.vae)
         self.video_filenames = VHSVideoCombine(image, self.params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, self.vae)
         self.output_images = SaveImage(image, file_name)
-        return self.output_images, self.video_filenames
+        return self.output_images
     
     async def wait(self):
-        return self.video_filenames
+        file_name_results = self.video_filenames.wait()._output
+        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
+        return image_batch
 
 
 class SVDWorkflow(VideoWorkflow):

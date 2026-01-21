@@ -5,7 +5,7 @@ from discord.app_commands import Choice
 from src.comfyscript_utils import get_models, get_loras
 from src.defaults import get_defaults_for_command
 from src.image_gen.ImageWorkflow import ModelType
-from src.image_gen.generation_workflows.sd_workflows import SDWorkflow
+from src.image_gen.generation_workflows.image_workflows import SDWorkflow
 
 
 @dataclass
