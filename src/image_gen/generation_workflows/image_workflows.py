@@ -304,7 +304,7 @@ class FluxWorkflow(SDWorkflow):
        self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])      
 
 
-class UpscaleWorkflow:
+class UpscaleWorkflow(SDWorkflow):
     def load_image(self, file_path: str):
         self.image, _ = LoadImage(file_path)
 

@@ -12,6 +12,7 @@ from src.ModelDefinition import ModelDefinition
 from src.comfy_workflows import do_workflow
 from src.defaults import *
 from src.image_gen.collage_utils import create_collage, create_gif_collage
+from src.image_gen.model_definitions.model_definitions import UpscaleModelDefinition
 from src.image_gen.nsfw_detection import check_nsfw
 from src.util import get_filename, build_command, get_workflow
 
@@ -47,7 +48,7 @@ class RerollableButton:
 
         params.seed = random.randint(0, 999999999999999)
 
-        images = await do_workflow(params, interaction)
+        images = await do_workflow(params, self.model_definition, interaction)
 
         if self.is_video:
             collage_path = create_gif_collage(images)
@@ -90,7 +91,10 @@ class InfoableButton:
 
     async def _image_info(self, interaction, button):
         params = self.params
-        is_nsfw = self.is_nsfw
+        if hasattr(self, 'is_nsfw'):
+            is_nsfw = self.is_nsfw
+        else:
+            is_nsfw = False
         info_str = (
             f"prompt: {params.prompt}\n"
             f"negative prompt: {params.negative_prompt}\n"
@@ -219,7 +223,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         # Buttons should probably still receive these params for rerolls
         params.filename = os.path.join(os.getcwd(), f"out/images_{get_filename(interaction, self.params)}_{index}.png")
         self.images[index].save(fp=params.filename)
-        images = await do_workflow(params, interaction)
+        images = await do_workflow(params, self.model_definition, interaction)
         collage_path = create_collage(images, params)
         final_message = f"{interaction.user.mention}, here are your alternative images! (prompt: \"{params.prompt}\")"
 
@@ -247,7 +251,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
 
         params.filename = os.path.join(os.getcwd(), f"out/images_{get_filename(interaction, self.params)}_{index}.png")
         self.images[index].save(fp=params.filename)
-        upscaled_image = await do_workflow(params, self.model_definition, interaction)
+        upscaled_image = await do_workflow(params, UpscaleModelDefinition(), interaction)
 
         if upscaled_image is None:
             return
@@ -257,7 +261,7 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
         upscaled_image_path = f"./out/upscaledImage_{timestamp}.png"
         upscaled_image.save(upscaled_image_path, pnginfo=pnginfo)
         final_message = f"{interaction.user.mention}, here is your upscaled image! (prompt: \"{self.params.prompt}\")"
-        buttons = AddDetailButtons(params, upscaled_image, author=interaction.user)
+        buttons = AddDetailButtons(params, self.model_definition, upscaled_image, author=interaction.user)
         fp = f"{get_filename(interaction, self.params)}_{index}.png"
 
         is_nsfw = self.is_nsfw
@@ -282,11 +286,12 @@ class Buttons(discord.ui.View, EditableButton, RerollableButton, DeletableButton
 
 
 class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
-    def __init__(self, params, images, *, timeout=None, author=None):
+    def __init__(self, params, model_definition, images, *, timeout=None, author=None):
         super().__init__(timeout=timeout)
         self.params = params
         self.images = images
         self.author = author
+        self.model_definition = model_definition
 
         if self.params.inpainting_prompt is None:
             options = [
@@ -325,7 +330,7 @@ class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
 
         params.filename = os.path.join(os.getcwd(), f"out/images_{get_filename(interaction, params)}_{params.seed}.png")
         self.images.save(fp=params.filename)
-        images = await do_workflow(params, interaction)
+        images = await do_workflow(params, self.model_definition, interaction)
 
         if images is None or (isinstance(images, list) and len(images) == 0):
             return
@@ -341,7 +346,7 @@ class AddDetailButtons(discord.ui.View, DeletableButton, InfoableButton):
             is_nsfw = check_nsfw(fp, params.prompt)
 
         await interaction.channel.send(
-            content=final_message, file=discord.File(fp=collage_path, filename=fp, spoiler=is_nsfw), view=AddDetailButtons(params, images[0], author=interaction.user)
+            content=final_message, file=discord.File(fp=collage_path, filename=fp, spoiler=is_nsfw), view=AddDetailButtons(params, self.model_definition, images[0], author=interaction.user)
         )
 
 
@@ -594,7 +599,7 @@ class EditResponse(discord.ui.View):
 
     async def generate_with_new_params(self, interaction, params):
         await interaction.response.send_message(f"Generating image with new parameters, this shouldn't take too long...")
-        images = await do_workflow(params, interaction)
+        images = await do_workflow(params, self.model_definition, interaction)
         final_message = f'{interaction.user.mention} asked me to re-imagine "{params.prompt}", here is what I imagined for them. Seed: {params.seed}'
         
         if self.command == "video": 

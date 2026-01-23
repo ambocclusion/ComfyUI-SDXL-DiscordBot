@@ -28,10 +28,14 @@ loras = get_loras()
 
 
 def get_model_choices(directory: str) -> list[str]:
+    if directory is None:
+        return []
     return [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, directory)]
 
 
 def get_lora_choices(directory: str) -> list[str]:
+    if directory is None:
+        return []
     return [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, directory)]
 
 def should_filter_model(m, command):

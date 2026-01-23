@@ -224,4 +224,7 @@ class UpscaleModelDefinition(ModelDefinition):
     slash_command: str = "upscale"
     config_section: str = "UPSCALE"
     model_folder: str = None
-    workflow: type[SDWorkflow] = None
+    workflow: type[SDWorkflow] = UpscaleWorkflow
+
+    def __init__(self):
+        super().__init__()

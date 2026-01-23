@@ -49,9 +49,8 @@ async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, 
             workflow.mask_for_inpainting(image_input)
         workflow.condition_prompts()
         workflow.sample(params.use_align_your_steps)
-        images, file_names = workflow.decode_and_save("final_output")
+        images = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
-
     results = await workflow.wait_for_result()
     await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
@@ -77,7 +76,7 @@ async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, int
     return image_batch
 
 async def _do_upscale(params: ImageWorkflow, model_definition: ModelDefinition, interaction):
-    workflow = UpscaleWorkflow()
+    workflow = model_definition.workflow(params)
     workflow.load_image(params.filename)
     workflow.upscale(model_definition.default_image_workflow.model, 2.0)
     image = workflow.save("final_output")
