@@ -29,7 +29,7 @@ class EditableButton:
         await task
 
     async def _edit_image(self, interaction, button):
-        edit_view = EditResponse(self.params, self.command, self.images)
+        edit_view = EditResponse(self.params, self.model_definition, self.command, self.images)
         await edit_view.show_edit_message(interaction)
 
 
