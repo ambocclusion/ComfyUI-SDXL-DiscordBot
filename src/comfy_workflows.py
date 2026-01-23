@@ -72,6 +72,7 @@ async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, int
         images = workflow.decode_and_save("final_output")
     wf.task.add_preview_callback(lambda task, node_id, image: do_preview(task, node_id, image, interaction, params.prompt))
     results = await workflow.wait_for_result()
+    await results
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 

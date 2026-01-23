@@ -130,7 +130,7 @@ class FluxKontextModelDefinition(ModelDefinition):
     model_name: str = "FLUX_KONTEXT"
     model_type: ModelType = ModelType.FLUX_KONTEXT
     slash_command: str = "edit"
-    config_section: str = "EDIT_GENERATION"
+    config_section: str = "EDIT"
     model_folder: str = "flux_kontext"
     workflow: type[SDWorkflow] = FluxWorkflow
 

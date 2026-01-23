@@ -270,8 +270,6 @@ class FluxWorkflow(SDWorkflow):
                 model = EasyCache(model, 0.05, 0.15, 0.95)
             else:   
                 model = EasyCache(model, 0.24, 0.15, 0.95)
-        if self.params.use_triton is True:
-            model = CompileModel(model)
         width, height = self.params.dimensions
         model = ModelSamplingFlux(model, 1.15, 0.5, width, height)
         if self.should_do_controlnet():
