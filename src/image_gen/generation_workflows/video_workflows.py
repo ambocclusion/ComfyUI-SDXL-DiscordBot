@@ -10,13 +10,14 @@ from src.image_gen.generation_workflows.image_workflows import SDWorkflow
 from src.util import read_config
 
 config = read_config()
+video_defaults = config["GENERAL_VIDEO_DEFAULTS"]
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 
 
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        self.video_filenames = VHSVideoCombine(image, self.params.fps, 0, "final_output", VHSVideoCombine.format.image_gif, False, True, None, None, self.vae)
+        self.video_filenames = VHSVideoCombine(image, self.params.fps, 0, "final_output", video_defaults["FORMAT"], False, True, None, None, self.vae)
         self.output_images = SaveImage(image, file_name)
         return self.output_images
     
