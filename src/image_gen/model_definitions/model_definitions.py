@@ -129,8 +129,8 @@ class FluxModelDefinition(ModelDefinition):
 class FluxKontextModelDefinition(ModelDefinition):
     model_name: str = "FLUX_KONTEXT"
     model_type: ModelType = ModelType.FLUX_KONTEXT
-    slash_command: str = "edit"
-    config_section: str = "EDIT"
+    slash_command: str = "kontext"
+    config_section: str = "KONTEXT"
     model_folder: str = "flux_kontext"
     workflow: type[SDWorkflow] = FluxWorkflow
 
@@ -144,6 +144,43 @@ class FluxKontextModelDefinition(ModelDefinition):
             **BASE_ARG_CHOICES,
         }
 
+@dataclass
+class Flux2ModelDefinition(ModelDefinition):
+    model_name: str = "FLUX2"
+    model_type: ModelType = ModelType.FLUX2
+    slash_command: str = "flux2"
+    config_section: str = "FLUX2_GENERATION"
+    model_folder: str = "flux2"
+    workflow: type[SDWorkflow] = Flux2Workflow
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
+
+@dataclass
+class Flux2EditModelDefinition(ModelDefinition):
+    model_name: str = "FLUX2"
+    model_type: ModelType = ModelType.FLUX2
+    slash_command: str = "edit"
+    config_section: str = "EDIT"
+    model_folder: str = "flux2"
+    workflow: type[SDWorkflow] = Flux2Workflow
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+        }
 
 # Video generation definitions
 @dataclass

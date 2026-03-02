@@ -10,7 +10,8 @@ class ModelType(Enum):
     PONY = "PONY",
     SD3 = "SD3",
     FLUX = "FLUX",
-    FLUX_KONTEXT = "FLUX_KONTEXT"
+    FLUX_KONTEXT = "FLUX_KONTEXT",
+    FLUX2 = "FLUX2"
 
 class WorkflowType(Enum):
     txt2img = "txt2img",

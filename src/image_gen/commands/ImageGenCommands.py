@@ -141,7 +141,7 @@ class ImageGenerationCommand(ImageGenCommands):
             defaults = self.model_definition.default_image_workflow
             
             workflow_type = WorkflowType.txt2img if input_file is None or controlnet_type is not None else WorkflowType.img2img
-            if self.command_name == "edit":
+            if self.command_name == "edit" or self.command_name == "kontext":
                 # Send an error if they used the edit command without an attachment.
                 if input_file is None:
                     await interaction.response.send_message("Error: You must upload a PNG or JPEG image to use the edit command.", ephemeral=True)

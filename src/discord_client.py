@@ -34,6 +34,8 @@ async def on_ready():
     commands.append(ImageGenerationCommand(tree, model_definitions.SD3ModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.FluxModelDefinition()))
     commands.append(ImageGenerationCommand(tree, model_definitions.FluxKontextModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.Flux2ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.Flux2EditModelDefinition()))
     
     commands.append(WANCommand(tree, model_definitions.WANModelDefinition()))
     commands.append(SVDCommand(tree, model_definitions.SVDModelDefinition()))
