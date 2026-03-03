@@ -147,7 +147,7 @@ MASHUP_IMAGE2_STRENGTH=1
 CONTROLNET_MODEL=flux/FLUX-controlnet-Union-Pro.safetensors
 
 [FLUX2_GENERATION_DEFAULTS]
-MODEL= flux-2-klein-4b-fp8.safetensors
+MODEL= flux2-klein-4b-fp8.safetensors
 NUM_STEPS=4
 CFG_SCALE=1
 BATCH_SIZE=4
@@ -194,7 +194,7 @@ TENSORRT_MODEL=
 CONTROLNET_MODEL=FLUX-controlnet-Union-Pro.safetensors
 
 [EDIT_DEFAULTS]
-MODEL=flux-2-klein-4b-fp8.safetensors
+MODEL=flux2-klein-4b-fp8.safetensors
 NUM_STEPS=20
 CFG_SCALE=5
 BATCH_SIZE=1
