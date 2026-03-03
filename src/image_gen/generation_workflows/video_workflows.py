@@ -17,7 +17,14 @@ comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        self.video_filenames = VHSVideoCombine(image, self.params.fps, 0, "final_output", video_defaults["FORMAT"], False, True, None, None, self.vae)
+        self.video_filenames = VHSVideoCombine(
+            images=image,
+            frame_rate=self.params.fps,
+            loop_count=0,
+            filename_prefix="final_output",
+            format=VHSVideoCombine.format.image_gif,
+            vae=self.vae
+        )
         self.output_images = SaveImage(image, file_name)
         return self.output_images
     
@@ -109,7 +116,7 @@ class WANWorkflow(VideoWorkflow):
         max_width = self.params.video_width
         output_path = ''
         with open(self.params.filename, "rb") as f:
-            self.image = Image.open(f)
+            self.image = PIL.Image.open(f)
             width = self.image.width
             height = self.image.height
             if self.params.crop_image or width > max_width or height > max_width:
