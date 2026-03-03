@@ -301,6 +301,31 @@ class FluxWorkflow(SDWorkflow):
     def edit_conditioning(self, use_ays: bool = False):
        self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])      
 
+class Flux2Workflow(SDWorkflow):
+    def _load_model(self):
+        model = UNETLoader(self.params.model)
+        self.clip_model = self.params.clip_model
+        clip = CLIPLoader(self.clip_model, 'flux2', 'default')
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
+                if lora.name == None or lora.name == "None":
+                    continue
+                model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
+        vae = VAELoader(VAELoader.vae_name.flux2_vae)
+        self.model = model
+        self.clip = clip
+        self.vae = vae
+        
+    def sample(self, use_ays: bool = False):
+        width, height = self.params.dimensions
+        noise = RandomNoise(self.params.seed)
+        guider = BasicGuider(self.model, self.conditioning)
+        sampler = KSamplerSelect(self.params.sampler)
+        sigmas = Flux2Scheduler(self.params.num_steps, width, height)
+        self.output_latents, _ = SamplerCustomAdvanced(noise, guider, sampler, sigmas, self.latents[0])
+        
+    def edit_conditioning(self, use_ays: bool = False):
+       self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])
 
 class UpscaleWorkflow(SDWorkflow):
     def load_image(self, file_path: str):
