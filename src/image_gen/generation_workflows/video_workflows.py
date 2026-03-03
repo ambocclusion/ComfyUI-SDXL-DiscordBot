@@ -5,6 +5,7 @@ from math import floor
 import PIL
 from PIL import Image
 
+from comfy_script.runtime import ImageBatchResult
 from comfy_script.runtime.nodes import *
 from src.image_gen.generation_workflows.image_workflows import SDWorkflow
 from src.util import read_config
@@ -13,6 +14,14 @@ config = read_config()
 video_defaults = config["GENERAL_VIDEO_DEFAULTS"]
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
 
+class VideoOutput(ImageBatchResult):
+    def __init__(self, video_filenames):
+        self.video_filenames = video_filenames
+        self.files = PIL.Image.open(os.path.join(comfy_root_directory, "output", self.video_filenames["gifs"][0]["filename"]))
+        super().__init__()
+
+    async def get(self, index):
+        return self.files.seek(index)
 
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
@@ -28,10 +37,9 @@ class VideoWorkflow(SDWorkflow):
         self.output_images = SaveImage(image, file_name)
         return self.output_images
     
-    async def wait(self):
+    async def wait_for_result(self):
         file_name_results = self.video_filenames.wait()._output
-        image_batch = PIL.Image.open(os.path.join(comfy_root_directory, "output", file_name_results["gifs"][0]["filename"]))
-        return image_batch
+        return ImageBatchResult.from_output(file_name_results)
 
 
 class SVDWorkflow(VideoWorkflow):

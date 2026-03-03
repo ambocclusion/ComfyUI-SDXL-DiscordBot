@@ -295,6 +295,7 @@ class WANCommand(ImageGenCommands):
                 [1.0, 1.0],
                 num_steps=generation_defaults.num_steps,
                 cfg_scale=cfg_scale or generation_defaults.cfg_scale,
+                batch_size=generation_defaults.batch_size,
                 seed=seed,
                 slash_command="video",
                 sampler=generation_defaults.sampler,
