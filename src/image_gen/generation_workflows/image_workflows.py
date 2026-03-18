@@ -315,7 +315,12 @@ class Flux2Workflow(SDWorkflow):
         self.model = model
         self.clip = clip
         self.vae = vae
-        
+    
+    def create_latents(self):
+        width, height = self.params.dimensions
+        latent = EmptyFlux2LatentImage(width, height, self.params.batch_size)
+        self.latents = [latent]
+    
     def sample(self, use_ays: bool = False):
         width, height = self.params.dimensions
         noise = RandomNoise(self.params.seed)
