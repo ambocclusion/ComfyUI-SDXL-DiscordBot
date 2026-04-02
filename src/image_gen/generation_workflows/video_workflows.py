@@ -26,21 +26,9 @@ class VideoOutput(ImageBatchResult):
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        self.video_filenames = VHSVideoCombine(
-            images=image,
-            frame_rate=self.params.fps,
-            loop_count=0,
-            filename_prefix="final_output",
-            format=VHSVideoCombine.format.image_gif,
-            vae=self.vae
-        )
-        self.output_images = SaveImage(image, file_name)
+        self.output_images = SaveAnimatedWEBP(images=image, filename_prefix=file_name, fps=self.params.fps)
         return self.output_images
     
-    async def wait_for_result(self):
-        file_name_results = self.video_filenames.wait()._output
-        return ImageBatchResult.from_output(file_name_results)
-
 
 class SVDWorkflow(VideoWorkflow):
     def _load_model(self):
