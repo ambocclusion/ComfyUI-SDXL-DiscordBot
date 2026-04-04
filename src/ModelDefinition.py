@@ -23,7 +23,7 @@ class ModelDefinition:
         self.default_image_workflow = get_defaults_for_command(f"{self.config_section}_DEFAULTS", self.model_type, self.slash_command)
 
     def get_general_argument_choices(self):
-        return {"model": self.model_choices, "lora": self.lora_choices, "lora2": self.lora_choices}
+        return {"model": self.model_choices[:25], "lora": self.lora_choices[:25], "lora2": self.lora_choices[:25]}
 
 
 models = get_models()
