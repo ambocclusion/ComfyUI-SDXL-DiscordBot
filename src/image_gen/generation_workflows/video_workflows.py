@@ -25,7 +25,7 @@ class VideoOutput(ImageBatchResult):
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        self.output_images = SaveAnimatedWEBP(images=image, filename_prefix=file_name, fps=self.params.fps)
+        self.output_images = SaveAnimatedWEBP(images=image, filename_prefix=file_name, fps=self.params.fps, method=SaveAnimatedWEBP.method.fastest, lossless=False)
         return self.output_images
     
 
@@ -109,27 +109,10 @@ class WANWorkflow(VideoWorkflow):
 
     def create_img2img_latents(self, image_input: Image):
         max_width = self.params.video_width
-        output_path = ''
-        with open(self.params.filename, "rb") as f:
-            self.image = PIL.Image.open(f)
-            width = self.image.width
-            height = self.image.height
-            if self.params.crop_image or width > max_width or height > max_width:
-                from src.imgutils import smart_crop, smart_resize
-                self.image = smart_crop(self.image)
-                self.image = smart_resize(self.image, max_width)
-                # Save the resized image
-                output_path, filename = os.path.split(self.params.filename)
-                new_filename = f"wan_{filename}"
-                output_path = output_path + "/" + new_filename
-                self.image.save(fp=output_path)
-            width = self.image.width
-            height = self.image.height
-        if output_path != '':
-            self.image = LoadImage(output_path)[0]
-        else:
-            self.image = LoadImage(self.params.filename)[0]
-        self.latent = Wan22ImageToVideoLatent(self.vae, width, height, self.params.video_length, 1, self.image)
+        max_height = max_width * 0.5625
+        self.image = ResizeImagesByLongerEdge(images=image_input, longer_edge=max_width)
+        self.image = ResizeAndPadImage(image=self.image, target_width=max_width, target_height=max_height)
+        self.latent = Wan22ImageToVideoLatent(self.vae, max_width, max_height, self.params.video_length, 1, self.image)
 
     def sample(self, use_ays: bool = False):
         if self.params.use_accelerator_lora == "true":
