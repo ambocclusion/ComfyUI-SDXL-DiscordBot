@@ -43,36 +43,11 @@ def should_filter_model(m, command):
     return False
 
 
-SD15_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "15")]
-SD15_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "15")]
-SDXL_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "sdxl")]
-SDXL_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "sdxl")]
-PONY_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "pony")]
-PONY_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "pony")]
-CASCADE_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "cascade")]
-SD3_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "sd3")]
-SD3_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "sd3")]
-FLUX_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "flux")]
-FLUX_KONTEXT_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", ""), value=m) for m in models if not should_filter_model(m, "flux_kontext")]
-FLUX_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "flux")]
 VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "wan")]
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
 SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
 CONTROLNET_CHOICES = [Choice(name="pose", value="pose"), Choice(name="canny", value="canny"), Choice(name="depth", value="depth")]
-
-COMMAND_MODEL_CHOICES = {
-    "sdxl": SDXL_MODEL_CHOICES,
-    "legacy": SD15_MODEL_CHOICES,
-    "pony": PONY_MODEL_CHOICES,
-}
-
-COMMAND_LORA_CHOICES = {
-    "sdxl": SDXL_LORA_CHOICES,
-    "legacy": SD15_LORA_CHOICES,
-    "pony": PONY_LORA_CHOICES,
-    "cascade": CASCADE_LORA_CHOICES,
-}
 
 BASE_ARG_DESCS = {
     "prompt": "Prompt for the image being generated",
@@ -93,31 +68,19 @@ IMAGE_GEN_DESCS = {
     "aspect_ratio": "Aspect ratio of the generated image",
     "num_steps": f"range [1, {MAX_STEPS}]; Number of sampling steps",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
+    "input_file": "Image to use as input for img2img",
+    "denoise_strength": f"range [0.01, 1.0], ; Strength of denoising filter during img2img. Only works when input_file is set",
+    "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
+    "inpainting_detection_threshold": f"range [0, 255], default ; Detection threshold for inpainting. Only works when inpainting_prompt is set",
     **CONTROLNET_ARG_DESCS,
 }
-LEGACY_ARG_DESCS = {
-    **BASE_ARG_DESCS,
-    **IMAGE_GEN_DESCS,
-    "num_steps": "Number of sampling steps; range [1, 30]",
-    "input_file": "Image to use as input for img2img",
-    "denoise_strength": f"range [0.01, 1.0], default {SD15_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
-    "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
-    "inpainting_detection_threshold": f"range [0, 255], default {SD15_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-}
-SDXL_ARG_DESCS = {
-    **BASE_ARG_DESCS,
-    **IMAGE_GEN_DESCS,
-    "input_file": "Image to use as input for img2img",
-    "denoise_strength": f"range [0.01, 1.0], default {SDXL_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
-    "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
-    "inpainting_detection_threshold": f"range [0, 255], default {SDXL_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-}
+
 SVD_ARG_DESCS = {
     "input_file": "Starting image for video generation",
-    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should adhere to the starting image. Default: {SVD_GENERATION_DEFAULTS.cfg_scale}",
-    "min_cfg": f"Starting CFG value. Generation will move to CFG_SCALE over the length of the video. Default: {SVD_GENERATION_DEFAULTS.min_cfg}",
-    "motion": f"The amount of motion in the video. Default: {SVD_GENERATION_DEFAULTS.motion}",
-    "augmentation": f"How much the video will differ from your starting image. Introduces a lot of noise. Default: {SVD_GENERATION_DEFAULTS.augmentation}",
+    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should adhere to the starting image. ",
+    "min_cfg": f"Starting CFG value. Generation will move to CFG_SCALE over the length of the video. ",
+    "motion": f"The amount of motion in the video.",
+    "augmentation": f"How much the video will differ from your starting image. Introduces a lot of noise. ",
 }
 VIDEO_ARG_DESCS = {
     "prompt": "Prompt for the video being generated",
@@ -126,81 +89,12 @@ VIDEO_ARG_DESCS = {
     "input_file": "Image to use as input",
     "lora": "LoRA to apply",
 }
-CASCADE_ARG_DESCS = {
-    **BASE_ARG_DESCS,
-    "lora": "LoRA to apply",
-    "lora_strength": "Strength of LoRA",
-    "aspect_ratio": "Aspect ratio of the generated image",
-    "num_steps": f"range [1, {MAX_STEPS}]; Number of sampling steps",
-    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
-    "input_file": "Image to use as input for img2img",
-    "mashup_image": "Image to use as reference for a mashup. If input_file is set it will mash these two images together!",
-    "denoise_strength": f"range [0.01, 1.0], default {CASCADE_GENERATION_DEFAULTS.denoise_strength}; Strength of denoising filter during img2img. Only works when input_file is set",
-    "inpainting_prompt": "Detection prompt for inpainting; examples: 'background' or 'person'",
-    "inpainting_detection_threshold": f"range [0, 255], default {CASCADE_GENERATION_DEFAULTS.inpainting_detection_threshold}; Detection threshold for inpainting. Only works when inpainting_prompt is set",
-}
-
-PONY_ARG_DESCS = {
-    "style_prompt": f"Aesthetic tags, default: {PONY_GENERATION_DEFAULTS.style_prompt}",
-    "negative_style_prompt": f"Negative aesthetic tags, default: {PONY_GENERATION_DEFAULTS.negative_style_prompt}",
-    **SDXL_ARG_DESCS
-}
-
-SD3_ARG_DESCS = {
-    **BASE_ARG_DESCS,
-}
-
-FLUX_ARG_DESCS = {
-    **BASE_ARG_DESCS,
-}
 
 BASE_ARG_CHOICES = {
     "aspect_ratio": ASPECT_RATIO_CHOICES[:25],
     "controlnet_type": CONTROLNET_CHOICES,
 }
 
-LEGACY_ARG_CHOICES = {
-    "model": SD15_MODEL_CHOICES[:25],
-    "lora": SD15_LORA_CHOICES[:25],
-    "lora2": SD15_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES,
-}
-SDXL_ARG_CHOICES = {
-    "model": SDXL_MODEL_CHOICES[:25],
-    "lora": SDXL_LORA_CHOICES[:25],
-    "lora2": SDXL_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES
-}
-CASCADE_ARG_CHOICES = {
-    "aspect_ratio": ASPECT_RATIO_CHOICES,
-    "lora": CASCADE_LORA_CHOICES[:25],
-    "lora2": CASCADE_LORA_CHOICES[:25],
-}
-SD3_ARG_CHOICES = {
-    "model": SD3_MODEL_CHOICES[:25],
-    "lora": SD3_LORA_CHOICES[:25],
-    "lora2": SD3_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES,
-}
-FLUX_ARG_CHOICES = {
-    "model": FLUX_MODEL_CHOICES[:25],
-    "lora": FLUX_LORA_CHOICES[:25],
-    "lora2": FLUX_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES
-}
-FLUX_KONTEXT_ARG_CHOICES = {
-    "model": FLUX_KONTEXT_MODEL_CHOICES[:25],
-    "lora": FLUX_LORA_CHOICES[:25],
-    "lora2": FLUX_LORA_CHOICES[:25],
-}
-
 VIDEO_ARG_CHOICES = {
     "lora": VIDEO_LORA_CHOICES[:25],
-}
-
-PONY_ARG_CHOICES = {
-    "model": PONY_MODEL_CHOICES[:25],
-    "lora": PONY_LORA_CHOICES[:25],
-    "lora2": PONY_LORA_CHOICES[:25],
-    **BASE_ARG_CHOICES,
 }

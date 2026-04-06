@@ -23,28 +23,26 @@ async def on_ready():
 
     await asyncio.sleep(1)
     print("server start")
-    from src.image_gen.commands.ImageGenCommands import ImageGenCommands, SDXLCommand, ImagineCommand, LegacyCommand
+    from src.image_gen.commands.ImageGenCommands import ImageGenerationCommand, WANCommand, SVDCommand
     commands = []
-    commands.append(ImageGenCommands(tree))
-    commands.append(LegacyCommand(tree, "legacy"))
-    commands.append(SDXLCommand(tree, "sdxl"))
-    commands.append(ImagineCommand(tree, "imagine"))
-    from src.command_descriptions import PONY_ARG_CHOICES
-    if len(PONY_ARG_CHOICES["model"]) != 0:
-        from src.image_gen.commands.ImageGenCommands import PonyXLCommand
-        commands.append(PonyXLCommand(tree, "pony"))
-    from src.command_descriptions import SD3_ARG_CHOICES
-    if len(SD3_ARG_CHOICES["model"]) != 0:
-        from src.image_gen.commands.ImageGenCommands import SD3Command
-        commands.append(SD3Command(tree, "sd3"))
-    from src.command_descriptions import FLUX_ARG_CHOICES
-    if len(FLUX_ARG_CHOICES["model"]) != 0:
-        from src.image_gen.commands.ImageGenCommands import FluxCommand
-        commands.append(FluxCommand(tree, "FLUX"))
-    from src.command_descriptions import FLUX_KONTEXT_ARG_CHOICES
-    if len(FLUX_KONTEXT_ARG_CHOICES["model"]) != 0:
-        from src.image_gen.commands.ImageGenCommands import EditCommand
-        commands.append(EditCommand(tree, "edit"))
+    
+    from src.image_gen.model_definitions import model_definitions
+    commands.append(ImageGenerationCommand(tree, model_definitions.SD15ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.SDXLModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.CascadeModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.PonyModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.SD3ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.FluxModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.FluxKontextModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.Flux2ModelDefinition()))
+    commands.append(ImageGenerationCommand(tree, model_definitions.Flux2EditModelDefinition()))
+    
+    commands.append(WANCommand(tree, model_definitions.WANModelDefinition()))
+    commands.append(SVDCommand(tree, model_definitions.SVDModelDefinition()))
+    
+    # remove commands that have no models available
+    commands = [cmd for cmd in commands if not isinstance(cmd, ImageGenerationCommand) or len(cmd.model_definition.model_choices) > 0]
+    
     from src.generic_commands import HelpCommands, InfoCommands
     commands.append(HelpCommands(tree))
     commands.append(InfoCommands(tree))

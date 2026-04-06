@@ -4,6 +4,7 @@ from typing import Optional
 from comfy_script.runtime import *
 from src.image_gen.ImageWorkflow import *
 from src.image_gen.controlnet_workflows import *
+from src.image_gen.generation_workflows.base_workflow import GenerationWorkflow
 from src.util import get_server_address
 
 load(get_server_address())
@@ -23,11 +24,7 @@ class Lora:
     strength: float
 
 
-class SDWorkflow:
-    def __init__(self, params: ImageWorkflow):
-        self.params = params
-        self._load_model()
-
+class SDWorkflow(GenerationWorkflow):
     def _load_model(self):
         if self.params.use_tensorrt is False or self.params.tensorrt_model is None or self.params.tensorrt_model == "":
             model, clip, vae = CheckpointLoaderSimple(self.params.model)
@@ -59,14 +56,6 @@ class SDWorkflow:
         if self.params.batch_size > 1:
             latent = RepeatLatentBatch(latent, self.params.batch_size)
         self.latents = [latent]
-
-    def setup_for_animate_diff(self):
-        context_options = ADEAnimateDiffUniformContextOptions(16, 2, 4, 'uniform', False, 'flat', False, 0, 1, None, None)
-        motion_model_settings = ADEAnimateDiffModelSettingsSimple(0, None, 1, 1)
-        self.model = ADEAnimateDiffLoaderWithContext(self.model, 'mm-Stabilized_mid.pth', 'sqrt_linear (AnimateDiff)', context_options, None, motion_model_settings, None, 1, False, None)
-
-    def animate_diff_combine(self, images: Image):
-        return VHSVideoCombine(images, 8, 0, 'final_output', 'image/gif', False, True, None, None)
 
     def condition_prompts(self):
         self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
@@ -130,10 +119,15 @@ class SDWorkflow:
 
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
-        return SaveImage(image, file_name)
+        self.output_images = SaveImage(image, file_name)
+        return self.output_images
     
     def resize_edit_image(self, input_image: Image):
         return FluxKontextImageScale(input_image)
+
+    async def wait_for_result(self):
+        return await self.output_images
+
 
 class SD15Workflow(SDWorkflow):
     pass
@@ -276,8 +270,6 @@ class FluxWorkflow(SDWorkflow):
                 model = EasyCache(model, 0.05, 0.15, 0.95)
             else:   
                 model = EasyCache(model, 0.24, 0.15, 0.95)
-        if self.params.use_triton is True:
-            model = CompileModel(model)
         width, height = self.params.dimensions
         model = ModelSamplingFlux(model, 1.15, 0.5, width, height)
         if self.should_do_controlnet():
@@ -309,8 +301,38 @@ class FluxWorkflow(SDWorkflow):
     def edit_conditioning(self, use_ays: bool = False):
        self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])      
 
+class Flux2Workflow(SDWorkflow):
+    def _load_model(self):
+        model = UNETLoader(self.params.model)
+        self.clip_model = self.params.clip_model
+        clip = CLIPLoader(self.clip_model, 'flux2', 'default')
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
+                if lora.name == None or lora.name == "None":
+                    continue
+                model, clip = LoraLoader(model, clip, lora.name, lora.strength, lora.strength)
+        vae = VAELoader(VAELoader.vae_name.flux2_vae)
+        self.model = model
+        self.clip = clip
+        self.vae = vae
+    
+    def create_latents(self):
+        width, height = self.params.dimensions
+        latent = EmptyFlux2LatentImage(width, height, self.params.batch_size)
+        self.latents = [latent]
+    
+    def sample(self, use_ays: bool = False):
+        width, height = self.params.dimensions
+        noise = RandomNoise(self.params.seed)
+        guider = BasicGuider(self.model, self.conditioning)
+        sampler = KSamplerSelect(self.params.sampler)
+        sigmas = Flux2Scheduler(self.params.num_steps, width, height)
+        self.output_latents, _ = SamplerCustomAdvanced(noise, guider, sampler, sigmas, self.latents[0])
+        
+    def edit_conditioning(self, use_ays: bool = False):
+       self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])
 
-class UpscaleWorkflow:
+class UpscaleWorkflow(SDWorkflow):
     def load_image(self, file_path: str):
         self.image, _ = LoadImage(file_path)
 

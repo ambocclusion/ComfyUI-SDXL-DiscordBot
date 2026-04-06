@@ -3,10 +3,26 @@ from typing import Optional
 import discord
 from discord import app_commands
 
-from src.command_descriptions import COMMAND_MODEL_CHOICES, COMMAND_LORA_CHOICES
+from src.image_gen.model_definitions.model_definitions import *
 
 info_commands = []
 
+COMMAND_MODEL_CHOICES = {
+    "sdxl": SDXLModelDefinition().model_choices,
+    "legacy": SD15ModelDefinition().model_choices,
+    "pony": PonyModelDefinition().model_choices,
+    "cascade": CascadeModelDefinition().model_choices,
+    "sd3": SD3ModelDefinition().model_choices,
+    "flux": FluxModelDefinition().model_choices,
+    "edit": FluxKontextModelDefinition().model_choices,
+}
+
+COMMAND_LORA_CHOICES = {
+    "sdxl": SDXLModelDefinition().lora_choices,
+    "legacy": SD15ModelDefinition().lora_choices,
+    "pony": PonyModelDefinition().lora_choices,
+    "cascade": CascadeModelDefinition().lora_choices,
+}
 
 class HelpCommands:
     def __init__(self, tree: discord.app_commands.CommandTree):

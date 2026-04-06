@@ -22,7 +22,7 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         get_default_from_config(section, "MODEL"),
         None, # loras
         None, # lora_strengths TODO add lora and lora strength defaults
-        get_default_from_config(section, "ASPECT_RATIO"),
+        get_default_from_config(section, "ASPECT_RATIO", "1:1"),
         get_default_from_config(section, "SAMPLER"),
         int(get_default_from_config(section, "NUM_STEPS", 20)),
         float(get_default_from_config(section, "CFG_SCALE", 4.0)),
@@ -68,33 +68,6 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         bool(get_default_from_config(section, "CROP_IMAGE", False)),
     )
     return workflow
-
-SD15_GENERATION_DEFAULTS = get_defaults_for_command("SD15_GENERATION_DEFAULTS", ModelType.SD15, "legacy")
-SDXL_GENERATION_DEFAULTS = get_defaults_for_command("SDXL_GENERATION_DEFAULTS", ModelType.SDXL, "sdxl")
-CASCADE_GENERATION_DEFAULTS = get_defaults_for_command("CASCADE_GENERATION_DEFAULTS", ModelType.CASCADE, "cascade")
-SVD_GENERATION_DEFAULTS = get_defaults_for_command("SVD_GENERATION_DEFAULTS", ModelType.VIDEO, "video")
-WAN_GENERATION_DEFAULTS = get_defaults_for_command("WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "wan")
-IMAGE_WAN_GENERATION_DEFAULTS = get_defaults_for_command("IMAGE_WAN_GENERATION_DEFAULTS", ModelType.VIDEO, "image_wan")
-PONY_GENERATION_DEFAULTS = get_defaults_for_command("PONY_GENERATION_DEFAULTS", ModelType.PONY, "pony")
-SD3_GENERATION_DEFAULTS = get_defaults_for_command("SD3_GENERATION_DEFAULTS", ModelType.SD3, "sd3")
-FLUX_GENERATION_DEFAULTS = get_defaults_for_command("FLUX_GENERATION_DEFAULTS", ModelType.FLUX, "flux")
-ADD_DETAIL_DEFAULTS = get_defaults_for_command("ADD_DETAIL_DEFAULTS", None, "add_detail")
-UPSCALE_DEFAULTS = get_defaults_for_command("UPSCALE_DEFAULTS", None, "upscale")
-EDIT_DEFAULTS = get_defaults_for_command("EDIT_DEFAULTS", ModelType.FLUX_KONTEXT, "edit")
-
-COMMAND_DEFAULTS = {
-    "imagine": FLUX_GENERATION_DEFAULTS,
-    "legacy": SD15_GENERATION_DEFAULTS,
-    "sdxl": SDXL_GENERATION_DEFAULTS,
-    "cascade": CASCADE_GENERATION_DEFAULTS,
-    "pony": PONY_GENERATION_DEFAULTS,
-    "video": SVD_GENERATION_DEFAULTS,
-    "add_detail": ADD_DETAIL_DEFAULTS,
-    "upscale": UPSCALE_DEFAULTS,
-    "sd3": SD3_GENERATION_DEFAULTS,
-    "flux": FLUX_GENERATION_DEFAULTS,
-    "edit": EDIT_DEFAULTS
-}
 
 MAX_RETRIES = int(get_default_from_config("BOT", "MAX_RETRIES") or 3)
 
