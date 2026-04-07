@@ -44,6 +44,7 @@ def should_filter_model(m, command):
 
 
 VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "wan")]
+LTX_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "ltx")]
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
 SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
@@ -90,6 +91,14 @@ VIDEO_ARG_DESCS = {
     "lora": "LoRA to apply",
 }
 
+LTX_ARG_DESCS = {
+    "prompt": "Prompt for the video being generated",
+    "negative_prompt": "Prompt for what you want to steer the AI away from",
+    "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
+    "input_file": "Image to use as first frame",
+    "lora": "LoRA to apply",
+}
+
 BASE_ARG_CHOICES = {
     "aspect_ratio": ASPECT_RATIO_CHOICES[:25],
     "controlnet_type": CONTROLNET_CHOICES,
@@ -97,4 +106,8 @@ BASE_ARG_CHOICES = {
 
 VIDEO_ARG_CHOICES = {
     "lora": VIDEO_LORA_CHOICES[:25],
+}
+
+LTX_ARG_CHOICES = {
+    "lora": LTX_LORA_CHOICES[:25],
 }

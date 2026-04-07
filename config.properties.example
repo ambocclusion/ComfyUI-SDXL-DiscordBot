@@ -251,6 +251,29 @@ CLIP_MODEL=umt5-xxl-encoder-Q5_K_M.gguf
 CROP_IMAGE=True
 VAE=wan2.2_vae.safetensors
 
+[LTX_GENERATION_DEFAULTS]
+# UNET: download from https://huggingface.co/Lightricks/LTX-Video-2.3
+MODEL=ltx/ltx-2.3-22b-dev-Q3_K_M.gguf
+# Text encoder (Gemma) + text projection (both required for DualCLIPLoader)
+CLIP_MODEL=gemma_3_12B_it_fp4_mixed.safetensors
+CLIP_MODEL2=ltx/ltx-2.3_text_projection_bf16.safetensors
+# Separate video and audio VAEs
+VAE=ltx/ltx-2.3-22b-dev_video_vae.safetensors
+AUDIO_VAE=ltx/ltx-2.3-22b-dev_audio_vae.safetensors
+# Spatial upscaler for two-pass pipeline
+LATENT_UPSCALE_MODEL=ltx-2.3-spatial-upscaler-x2-1.1.safetensors
+# Distilled LoRA (applied model-only at strength 0.6)
+ACCELERATOR_ENABLED=True
+ACCELERATOR_LORA_NAME=ltx/ltx-2.3-22b-distilled-lora-dynamic_fro09_avg_rank_105_bf16.safetensors
+CFG_SCALE=1.0
+BATCH_SIZE=1
+FPS=24
+VIDEO_WIDTH=768
+# Must be 8n+1 (e.g. 97, 121, 161, 241)
+VIDEO_LENGTH=241
+DEFAULT_STYLE_PROMPT=
+DEFAULT_NEGATIVE_STYLE_PROMPT=blurry, low quality, still frame, frames, watermark, overlay, titles, has blurbox, has subtitles
+
 [ADD_DETAIL_DEFAULTS]
 DENOISE_STRENGTH=0.3
 BATCH_SIZE=1

@@ -160,3 +160,124 @@ class WANWorkflow(VideoWorkflow):
     def condition_prompts(self):
         self.model = ModelSamplingSD3(self.model)
         super().condition_prompts()
+
+
+class LTXWorkflow(VideoWorkflow):
+    # Default sigmas for LTX 2.3 two-pass distilled pipeline
+    COARSE_SIGMAS = '1., 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0'
+    REFINE_SIGMAS = '0.85, 0.7250, 0.4219, 0.0'
+
+    def _load_model(self):
+        # UNET (GGUF or safetensors)
+        if self.params.model.endswith('.gguf'):
+            self.model = UnetLoaderGGUF(self.params.model)
+        else:
+            self.model = UNETLoader(self.params.model, 'default')
+
+        # Distilled LoRA applied to model only (not CLIP)
+        if self.params.use_accelerator_lora and self.params.accelerator_lora_name:
+            self.model = LoraLoaderModelOnly(self.model, self.params.accelerator_lora_name, 0.6)
+
+        # CLIP: Gemma text encoder + LTX text projection
+        self.clip = DualCLIPLoader(self.params.clip_model, self.params.clip_model2, 'ltxv', 'default')
+
+        # Apply user LoRAs to model + CLIP
+        if self.params.lora_dict:
+            for lora in self.params.lora_dict:
+                if lora.name is None or lora.name == 'None':
+                    continue
+                self.model, self.clip = LoraLoader(self.model, self.clip, lora.name, lora.strength, lora.strength)
+
+        # Video VAE and audio VAE loaded separately
+        self.vae = VAELoader(self.params.vae)
+        self.audio_vae_model = VAELoader(self.params.audio_vae)
+
+        # Spatial upscale model for two-pass pipeline
+        self.upscale_model = LatentUpscaleModelLoader(self.params.latent_upscale_model)
+
+        self._has_input_image = False
+
+    def _get_dimensions(self):
+        width = int(self.params.video_width) if self.params.video_width else 768
+        width = (width // 32) * 32
+        height = (width * 9 // 16 // 32) * 32
+        return width, height
+
+    def create_latents(self):
+        width, height = self._get_dimensions()
+        self.latent = EmptyLTXVLatentVideo(width, height, int(self.params.video_length), 1)
+        self._has_input_image = False
+
+    def create_img2img_latents(self, image_input: Image):
+        width, height = self._get_dimensions()
+        self.latent = EmptyLTXVLatentVideo(width, height, int(self.params.video_length), 1)
+        self.input_image = image_input
+        self._has_input_image = True
+
+    def condition_prompts(self):
+        prompt = self.params.prompt
+        if self.params.enhance_ltx_prompt:
+            image_for_enhancer = self.input_image if self._has_input_image else None
+            prompt = TextGenerateLTX2Prompt(
+                self.clip,
+                prompt,
+                1024,
+                'on',
+                image=image_for_enhancer,
+            )
+        self.conditioning = CLIPTextEncode(prompt, self.clip)
+        self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or '', self.clip)
+        self.conditioning, self.negative_conditioning = LTXVConditioning(
+            self.conditioning, self.negative_conditioning, float(self.params.fps or 24)
+        )
+
+        # Add input image as first-frame guide for img2video
+        if self._has_input_image:
+            self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuide(
+                self.conditioning, self.negative_conditioning, self.vae, self.latent,
+                self.input_image, 0, 1.0
+            )
+
+        # Concat video latent with empty audio latent for AV pipeline
+        audio_latent = LTXVEmptyLatentAudio(
+            frames_number=int(self.params.video_length),
+            frame_rate=int(self.params.fps or 24),
+            batch_size=1,
+            audio_vae=self.audio_vae_model,
+        )
+        self.latent = LTXVConcatAVLatent(self.latent, audio_latent)
+
+    def sample(self, use_ays: bool = False):
+        # Pass 1: coarse sampling with euler_ancestral
+        noise = RandomNoise(self.params.seed)
+        guider = CFGGuider(self.model, self.conditioning, self.negative_conditioning, self.params.cfg_scale)
+        coarse_out, _ = SamplerCustomAdvanced(
+            noise, guider,
+            KSamplerSelect('euler_ancestral'),
+            ManualSigmas(self.COARSE_SIGMAS),
+            self.latent,
+        )
+
+        # Separate AV, upscale video, crop guide keyframes
+        video_latent, audio_latent = LTXVSeparateAVLatent(coarse_out)
+        video_latent = LTXVLatentUpsampler(video_latent, self.upscale_model, self.vae)
+        positive2, negative2, _ = LTXVCropGuides(self.conditioning, self.negative_conditioning, video_latent)
+
+        # Pass 2: refinement with euler on upscaled latent
+        noise2 = RandomNoise(self.params.seed)
+        guider2 = CFGGuider(self.model, positive2, negative2, self.params.cfg_scale)
+        combined = LTXVConcatAVLatent(video_latent, audio_latent)
+        _, refined_out = SamplerCustomAdvanced(
+            noise2, guider2,
+            KSamplerSelect('euler'),
+            ManualSigmas(self.REFINE_SIGMAS),
+            combined,
+        )
+
+        # Separate final video latent for decoding
+        self.output_latents, _ = LTXVSeparateAVLatent(refined_out)
+
+    def decode_and_save(self, file_name: str):
+        image = VAEDecodeTiled(self.output_latents, self.vae, tile_size=512, overlap=64, temporal_size=2048, temporal_overlap=8)
+        self.output_images = SaveAnimatedWEBP(images=image, filename_prefix=file_name, fps=self.params.fps, method=SaveAnimatedWEBP.method.fastest, lossless=False)
+        return self.output_images

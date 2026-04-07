@@ -66,6 +66,10 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         float(get_default_from_config(section, "CONTROLNET_END_PERCENT", 1.0)),
         str(get_default_from_config(section, "CLIP_MODEL")),
         bool(get_default_from_config(section, "CROP_IMAGE", False)),
+        None, # enhance_ltx_prompt
+        get_default_from_config(section, "CLIP_MODEL2"),
+        get_default_from_config(section, "AUDIO_VAE"),
+        get_default_from_config(section, "LATENT_UPSCALE_MODEL"),
     )
     return workflow
 

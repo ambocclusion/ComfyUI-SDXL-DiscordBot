@@ -38,7 +38,10 @@ class HelpCommands:
 `/cascade` - Use Stable Cascade to generate an image. Does text well. Use the two image inputs to do an image mashup!
 `/pony` - Use Pony Diffusion to generate an image. Based on SDXL.
 `/legacy` - Use SD 1.5 to generate an image.
-`/video` - Create a video with an input image.
+`/wan` - Generate a video using WAN. Supports image-to-video.
+`/ltx` - Generate a video using LTX 2.3. Supports image-to-video.
+`/video` - Same as /ltx but automatically enhances your prompt using the built-in LLM.
+`/svd` - Create a video from an input image using Stable Video Diffusion.
 `/models` - List all available models.
 `/loras` - List all available Loras.
 """,

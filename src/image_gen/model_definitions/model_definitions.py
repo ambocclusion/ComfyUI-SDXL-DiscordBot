@@ -191,6 +191,27 @@ class Flux2EditModelDefinition(ModelDefinition):
             **self.get_general_argument_choices(),
         }
 
+@dataclass
+class LTXModelDefinition(ModelDefinition):
+    model_name: str = "LTX"
+    model_type: ModelType = ModelType.LTX
+    slash_command: str = "ltx"
+    config_section: str = "LTX_GENERATION"
+    model_folder: str = "ltx"
+    workflow: type[SDWorkflow] = LTXWorkflow
+
+    def __init__(self):
+        super().__init__()
+        self.argument_descriptions = {
+            **BASE_ARG_DESCS,
+            **IMAGE_GEN_DESCS,
+        }
+        self.argument_choices = {
+            **BASE_ARG_CHOICES,
+            **self.get_general_argument_choices(),
+        }
+
+
 # Video generation definitions
 @dataclass
 class SVDModelDefinition(ModelDefinition):

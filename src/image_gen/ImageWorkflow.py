@@ -11,7 +11,8 @@ class ModelType(Enum):
     SD3 = "SD3",
     FLUX = "FLUX",
     FLUX_KONTEXT = "FLUX_KONTEXT",
-    FLUX2 = "FLUX2"
+    FLUX2 = "FLUX2",
+    LTX = "LTX",
 
 class WorkflowType(Enum):
     txt2img = "txt2img",
@@ -92,3 +93,7 @@ class ImageWorkflow:
     controlnet_end_percent: Optional[float] = None
     clip_model: Optional[str] = None,
     crop_image: Optional[bool] = None,
+    enhance_ltx_prompt: Optional[bool] = None,
+    clip_model2: Optional[str] = None,
+    audio_vae: Optional[str] = None,
+    latent_upscale_model: Optional[str] = None,

@@ -269,7 +269,7 @@ class WANCommand(ImageGenCommands):
         super().__init__(tree, model_definition)
 
     def add_commands(self):
-        @self.tree.command(name="video", description="Generate a video based on a prompt")
+        @self.tree.command(name="wan", description="Generate a video based on a prompt using WAN")
         @app_commands.describe(**VIDEO_ARG_DESCS)
         @app_commands.choices(**VIDEO_ARG_CHOICES)
         async def slash_command(
@@ -302,7 +302,7 @@ class WANCommand(ImageGenCommands):
                 cfg_scale=cfg_scale or generation_defaults.cfg_scale,
                 batch_size=generation_defaults.batch_size,
                 seed=seed,
-                slash_command="video",
+                slash_command="wan",
                 sampler=generation_defaults.sampler,
                 scheduler=generation_defaults.scheduler,
                 fps=generation_defaults.fps,
@@ -319,7 +319,79 @@ class WANCommand(ImageGenCommands):
                 interaction,
                 f'🎥{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(generation_messages)} 🎥',
                 f'{interaction.user.mention} asked me to imagine "{prompt}" with WAN! {random.choice(completion_messages)} 🎥',
-                "video",
+                "wan",
+                params,
+                self.model_definition,
+            )
+
+
+class LTXCommand(ImageGenCommands):
+    def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition, enhance_prompt: bool = False):
+        super().__init__(tree, model_definition)
+        self.enhance_prompt = enhance_prompt
+
+    def add_commands(self):
+        command_name = "video" if self.enhance_prompt else "ltx"
+        description = "Generate a video using LTX with automatic prompt enhancement" if self.enhance_prompt else "Generate a video using LTX 2.3"
+        enhance_prompt = self.enhance_prompt
+
+        @self.tree.command(name=command_name, description=description)
+        @app_commands.describe(**LTX_ARG_DESCS)
+        @app_commands.choices(**LTX_ARG_CHOICES)
+        async def slash_command(
+                interaction: discord.Interaction,
+                prompt: str,
+                negative_prompt: str = None,
+                cfg_scale: Range[float, 1.0, MAX_CFG] = None,
+                input_file: Attachment = None,
+                seed: int = None,
+                lora: Choice[str] = None,
+        ):
+            if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
+                    ephemeral=True,
+                )
+                return
+
+            generation_defaults = self.model_definition.default_image_workflow
+
+            params = ImageWorkflow(
+                ModelType.LTX,
+                WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
+                prompt,
+                negative_prompt,
+                generation_defaults.model,
+                unpack_choices(lora, None),
+                [1.0, 1.0],
+                num_steps=generation_defaults.num_steps,
+                cfg_scale=cfg_scale or generation_defaults.cfg_scale,
+                batch_size=generation_defaults.batch_size,
+                seed=seed,
+                slash_command=command_name,
+                sampler=generation_defaults.sampler,
+                scheduler=generation_defaults.scheduler,
+                fps=generation_defaults.fps,
+                vae=generation_defaults.vae,
+                filename=await process_attachment(input_file, interaction) if input_file is not None else None,
+                style_prompt=generation_defaults.style_prompt,
+                negative_style_prompt=generation_defaults.negative_style_prompt,
+                video_width=generation_defaults.video_width,
+                video_length=generation_defaults.video_length,
+                clip_model=generation_defaults.clip_model,
+                use_accelerator_lora=generation_defaults.use_accelerator_lora,
+                accelerator_lora_name=generation_defaults.accelerator_lora_name,
+                enhance_ltx_prompt=enhance_prompt,
+                clip_model2=generation_defaults.clip_model2,
+                audio_vae=generation_defaults.audio_vae,
+                latent_upscale_model=generation_defaults.latent_upscale_model,
+            )
+            label = "LTX (enhanced)" if enhance_prompt else "LTX"
+            await self._do_request(
+                interaction,
+                f'🎥{interaction.user.mention} asked me to imagine "{prompt}" with {label}! {random.choice(generation_messages)} 🎥',
+                f'{interaction.user.mention} asked me to imagine "{prompt}" with {label}! {random.choice(completion_messages)} 🎥',
+                command_name,
                 params,
                 self.model_definition,
             )
