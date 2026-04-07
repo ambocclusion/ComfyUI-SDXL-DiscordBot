@@ -22,11 +22,7 @@ def create_webp_collage(images):
 
 
 def create_mp4_collage(images):
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    collage_path = f"./out/images_{timestamp}.mp4"
-    images[0].save(collage_path, save_all=True, append_images=images[1:])
-
-    return collage_path
+    return images[0].path
 
 
 def create_collage(images, image_workflow = None):

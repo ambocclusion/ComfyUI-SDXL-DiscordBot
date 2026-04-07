@@ -22,6 +22,28 @@ class VideoOutput(ImageBatchResult):
     async def get(self, index):
         return self.files.seek(index)
 
+class VideoFile:
+    """Wraps a saved MP4 file path for use in the image generation pipeline."""
+    def __init__(self, path: str):
+        self.path = path
+        self.format = "MP4"
+
+
+class VideoFileResult:
+    """Awaitable wrapper for a VideoFile, compatible with the image batch pipeline."""
+    def __init__(self, path: str):
+        self._video_file = VideoFile(path)
+
+    def __await__(self):
+        return self._resolve().__await__()
+
+    async def _resolve(self):
+        return self
+
+    async def get(self, index: int):
+        return self._video_file
+
+
 class VideoWorkflow(SDWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecode(self.output_latents, self.vae)
@@ -291,3 +313,12 @@ class LTXWorkflow(VideoWorkflow):
         video = CreateVideo(images=image, audio=audio)
         self.output_images = SaveVideo(video=video, filename_prefix=file_name)
         return self.output_images
+
+    async def wait_for_result(self):
+        # Do NOT await the result — ImageBatchResult.__await__ calls PIL.Image.open on the
+        # downloaded bytes, which fails for MP4. The job is already complete after the first
+        # await, so read the filename directly from the output dict.
+        result = await self.output_images
+        entry = result._output['images'][0]
+        mp4_path = os.path.join(comfy_root_directory, "output", entry.get('subfolder', ''), entry['filename'])
+        return VideoFileResult(mp4_path)

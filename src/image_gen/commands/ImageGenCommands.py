@@ -72,7 +72,9 @@ class ImageGenCommands:
 
             file_name = get_filename(interaction, params)
 
-            if "GIF" in images[0].format:
+            if "MP4" in images[0].format:
+                fname = f"{file_name}.mp4"
+            elif "GIF" in images[0].format:
                 fname = f"{file_name}.gif"
             elif "WEBP" in images[0].format:
                 fname = f"{file_name}.webp"
