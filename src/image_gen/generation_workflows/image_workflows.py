@@ -57,8 +57,27 @@ class SDWorkflow(GenerationWorkflow):
             latent = RepeatLatentBatch(latent, self.params.batch_size)
         self.latents = [latent]
 
+    def enhance_prompt(self):
+        if not self.params.use_llm:
+            return
+        from src.defaults import llm_clip_model
+        loaded_llm_model = CLIPLoader(llm_clip_model)
+        self._enhanced_prompt = TextGenerate(
+            loaded_llm_model,
+            self.params.prompt,
+            1024,
+            'on',
+            **{
+                'sampling_mode.seed': self.params.seed or 0,
+                'sampling_mode.temperature': 0.7,
+                'sampling_mode.top_k': 64,
+                'sampling_mode.top_p': 0.95,
+                'sampling_mode.min_p': 0.05,
+                'sampling_mode.repetition_penalty': 1.05,
+            })
+
     def condition_prompts(self):
-        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
+        self.conditioning = CLIPTextEncode(self._get_prompt(), self.clip)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
         if self.should_do_controlnet():
             self.do_controlnet_conditioning()
@@ -135,7 +154,7 @@ class SD15Workflow(SDWorkflow):
 
 class SDXLWorkflow(SDWorkflow):
     def condition_prompts(self):
-        self.conditioning = CLIPTextEncodeSDXL(self.clip, 4096, 4096, 0, 0, 4096, 4096, self.params.prompt, self.params.prompt)
+        self.conditioning = CLIPTextEncodeSDXL(self.clip, 4096, 4096, 0, 0, 4096, 4096, self._get_prompt(), self._get_prompt())
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
         if self.should_do_controlnet():
             self.do_controlnet_conditioning()
@@ -153,7 +172,7 @@ class SDXLWorkflow(SDWorkflow):
 
 class PonyWorkflow(SDXLWorkflow):
     def condition_prompts(self):
-        self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, self.params.prompt, self.params.prompt)
+        self.conditioning = CLIPTextEncodeSDXL(self.clip, 1024, 1024, 0, 0, 1024, 1024, self._get_prompt(), self._get_prompt())
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt, self.clip)
         if self.should_do_controlnet():
             self.do_controlnet_workflow()
@@ -186,7 +205,7 @@ class SDCascadeWorkflow(SDWorkflow):
             self.conditioning = UnCLIPConditioning(self.conditioning, encoded_clip_vision)
 
     def condition_prompts(self):
-        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
+        self.conditioning = CLIPTextEncode(self._get_prompt(), self.clip)
         self.stage_c_conditioning = self.conditioning
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
 
@@ -234,7 +253,7 @@ class SD3Workflow(SDWorkflow):
         self.latents = [latent]
 
     def condition_prompts(self):
-        self.conditioning = CLIPTextEncode(self.params.prompt, self.clip)
+        self.conditioning = CLIPTextEncode(self._get_prompt(), self.clip)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or "", self.clip)
         zero_out_negative_conditioning = ConditioningZeroOut(self.negative_conditioning)
         negative_conditioning1 = ConditioningSetTimestepRange(zero_out_negative_conditioning, 0.1, 1)

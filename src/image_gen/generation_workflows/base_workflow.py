@@ -43,11 +43,17 @@ class GenerationWorkflow:
     def decode(self):
         pass
     
+    def enhance_prompt(self):
+        pass
+
+    def _get_prompt(self):
+        return getattr(self, '_enhanced_prompt', self.params.prompt)
+
     def decode_and_save(self, file_name: str):
         pass
-    
+
     def resize_edit_image(self, image_input: Image) -> Image:
         pass
-    
+
     async def wait_for_result(self):
         pass

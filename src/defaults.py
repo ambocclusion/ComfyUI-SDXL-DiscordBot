@@ -75,10 +75,4 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
 
 MAX_RETRIES = int(get_default_from_config("BOT", "MAX_RETRIES") or 3)
 
-llm_prompt = get_default_from_config("LLM", "SYSTEM_PROMPT")
-
-llm_parameters = {
-    "API_URL": get_default_from_config("LLM", "API_URL"),
-    "API_PORT": get_default_from_config("LLM", "API_PORT"),
-    "MODEL_NAME": get_default_from_config("LLM", "MODEL_NAME"),
-}
+llm_clip_model = get_default_from_config("LLM", "CLIP_MODEL")

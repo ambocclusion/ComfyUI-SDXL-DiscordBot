@@ -236,26 +236,27 @@ class LTXWorkflow(VideoWorkflow):
         self.input_image = image_input
         self._has_input_image = True
 
+    def enhance_prompt(self):
+        if not self.params.enhance_ltx_prompt:
+            return
+        self._enhanced_prompt = TextGenerateLTX2Prompt(
+            self.clip,
+            self.params.prompt,
+            1024,
+            'on',
+            image=self.input_image if self._has_input_image else None,
+            **{
+                'sampling_mode.seed': self.params.seed or 0,
+                'sampling_mode.temperature': 0.7,
+                'sampling_mode.top_k': 64,
+                'sampling_mode.top_p': 0.95,
+                'sampling_mode.min_p': 0.05,
+                'sampling_mode.repetition_penalty': 1.05,
+            }
+        )
+
     def condition_prompts(self):
-        prompt = self.params.prompt
-        if self.params.enhance_ltx_prompt:
-            image_for_enhancer = self.input_image if self._has_input_image else None
-            prompt = TextGenerateLTX2Prompt(
-                self.clip,
-                prompt,
-                1024,
-                'on',
-                image=image_for_enhancer,
-                **{
-                    'sampling_mode.seed': self.params.seed or 0,
-                    'sampling_mode.temperature': 0.7,
-                    'sampling_mode.top_k': 64,
-                    'sampling_mode.top_p': 0.95,
-                    'sampling_mode.min_p': 0.05,
-                    'sampling_mode.repetition_penalty': 1.05,
-                }
-            )
-        self.conditioning = CLIPTextEncode(prompt, self.clip)
+        self.conditioning = CLIPTextEncode(self._get_prompt(), self.clip)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or '', self.clip)
         self.conditioning, self.negative_conditioning = LTXVConditioning(
             self.conditioning, self.negative_conditioning, float(self.params.fps or 24)

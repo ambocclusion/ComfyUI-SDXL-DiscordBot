@@ -30,6 +30,7 @@ async def _do_txt2img(params: ImageWorkflow, model_definition: ModelDefinition, 
     with Workflow() as wf:
         workflow = model_definition.workflow(params)
         workflow.create_latents()
+        workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.sample(use_ays=params.use_align_your_steps)
         images = workflow.decode_and_save("final_output")
@@ -47,6 +48,7 @@ async def _do_img2img(params: ImageWorkflow, model_definition: ModelDefinition, 
         workflow.create_img2img_latents(image_input)
         if params.inpainting_prompt:
             workflow.mask_for_inpainting(image_input)
+        workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.sample(params.use_align_your_steps)
         images = workflow.decode_and_save("final_output")
@@ -66,6 +68,7 @@ async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, int
             image_input = image_inputs[0]
         image_input = workflow.resize_edit_image(image_input)
         workflow.create_img2img_latents(image_input)
+        workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.edit_conditioning()
         workflow.sample()
@@ -90,6 +93,7 @@ async def _do_add_detail(params: ImageWorkflow, model_definition: ModelDefinitio
         workflow = model_definition.workflow(params)
         image_input = LoadImage(params.filename)[0]
         workflow.create_img2img_latents(image_input)
+        workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.condition_for_detailing(params.detailing_controlnet, image_input)
         workflow.sample(use_ays=False)
@@ -106,6 +110,7 @@ async def _do_image_mashup(params: ImageWorkflow, model_definition: ModelDefinit
         workflow = model_definition.workflow(params)
         image_inputs = [LoadImage(filename)[0] for filename in [params.filename, params.filename2] if filename is not None]
         workflow.create_latents()
+        workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.unclip_encode(image_inputs)
         workflow.sample(use_ays=params.use_align_your_steps)
@@ -116,22 +121,6 @@ async def _do_image_mashup(params: ImageWorkflow, model_definition: ModelDefinit
     image_batch = [await results.get(i) for i in range(params.batch_size)]
     return image_batch
 
-
-def process_prompt_with_llm(positive_prompt: str, seed: int, profile: str):
-    from src.defaults import llm_prompt, llm_parameters
-
-    prompt_text = llm_prompt + "\n" + positive_prompt
-    _, prompt, _ = IFPromptMkr(
-        input_prompt=prompt_text,
-        engine=IFChatPrompt.engine.ollama,
-        base_ip=llm_parameters["API_URL"],
-        port=llm_parameters["API_PORT"],
-        selected_model=llm_parameters["MODEL_NAME"],
-        profile=profile,
-        seed=seed,
-        random=True,
-    )
-    return prompt
 
 
 workflow_type_to_method = {
@@ -192,11 +181,6 @@ async def do_workflow(params: ImageWorkflow, model_definition: ModelDefinition, 
                 params.use_align_your_steps = True if params.model_type != ModelType.SD3 else False
 
             params.lora_dict = loras
-
-            if params.use_llm is True:
-                enhanced_prompt = process_prompt_with_llm(params.prompt, params.seed, params.llm_profile)
-                prompt_result = await IFDisplayText(enhanced_prompt)
-                params.prompt = params.prompt + ", BREAK \n" + prompt_result._output["string"][0]
 
             if params.style_prompt is not None and params.style_prompt not in params.prompt:
                 params.prompt = params.style_prompt + "\n" + params.prompt

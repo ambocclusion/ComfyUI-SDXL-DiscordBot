@@ -65,11 +65,6 @@ class ImageGenCommands:
 
             final_message = f"{completion_message}\n Seed: {params.seed}"
 
-            if params.use_llm:
-                final_message += f"\nenhanced prompt: `{params.prompt}`"
-
-            params.use_llm = False
-
             file_name = get_filename(interaction, params)
 
             if "MP4" in images[0].format:
