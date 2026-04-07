@@ -20,6 +20,15 @@ def create_webp_collage(images):
 
     return collage_path
 
+
+def create_mp4_collage(images):
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    collage_path = f"./out/images_{timestamp}.mp4"
+    images[0].save(collage_path, save_all=True, append_images=images[1:])
+
+    return collage_path
+
+
 def create_collage(images, image_workflow = None):
     if images is None or len(images) == 0:
         print("Error: No images to make collage")
@@ -29,6 +38,8 @@ def create_collage(images, image_workflow = None):
         return create_gif_collage(images)
     elif images[0].format == "WEBP":
         return create_webp_collage(images)
+    elif images[0].format == "MP4":
+        return create_mp4_collage(images)
 
     num_images = len(images)
     num_cols = ceil(sqrt(num_images))

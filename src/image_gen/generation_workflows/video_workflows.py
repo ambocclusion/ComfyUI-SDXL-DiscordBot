@@ -189,8 +189,8 @@ class LTXWorkflow(VideoWorkflow):
                 self.model, self.clip = LoraLoader(self.model, self.clip, lora.name, lora.strength, lora.strength)
 
         # Video VAE and audio VAE loaded separately
-        self.vae = VAELoader(self.params.vae)
-        self.audio_vae_model = VAELoader(self.params.audio_vae)
+        self.vae = VAELoaderKJ(self.params.vae)
+        self.audio_vae_model = VAELoaderKJ(self.params.audio_vae)
 
         # Spatial upscale model for two-pass pipeline
         self.upscale_model = LatentUpscaleModelLoader(self.params.latent_upscale_model)
@@ -224,6 +224,14 @@ class LTXWorkflow(VideoWorkflow):
                 1024,
                 'on',
                 image=image_for_enhancer,
+                **{
+                    'sampling_mode.seed': self.params.seed or 0,
+                    'sampling_mode.temperature': 0.7,
+                    'sampling_mode.top_k': 64,
+                    'sampling_mode.top_p': 0.95,
+                    'sampling_mode.min_p': 0.05,
+                    'sampling_mode.repetition_penalty': 1.05,
+                }
             )
         self.conditioning = CLIPTextEncode(prompt, self.clip)
         self.negative_conditioning = CLIPTextEncode(self.params.negative_prompt or '', self.clip)
@@ -275,9 +283,11 @@ class LTXWorkflow(VideoWorkflow):
         )
 
         # Separate final video latent for decoding
-        self.output_latents, _ = LTXVSeparateAVLatent(refined_out)
+        self.output_latents, self.audio_latents = LTXVSeparateAVLatent(refined_out)
 
     def decode_and_save(self, file_name: str):
         image = VAEDecodeTiled(self.output_latents, self.vae, tile_size=512, overlap=64, temporal_size=2048, temporal_overlap=8)
-        self.output_images = SaveAnimatedWEBP(images=image, filename_prefix=file_name, fps=self.params.fps, method=SaveAnimatedWEBP.method.fastest, lossless=False)
+        audio = LTXVAudioVAEDecode(samples=self.audio_latents, audio_vae=self.audio_vae_model)
+        video = CreateVideo(images=image, audio=audio)
+        self.output_images = SaveVideo(video=video, filename_prefix=file_name)
         return self.output_images

@@ -261,7 +261,7 @@ CLIP_MODEL2=ltx/ltx-2.3_text_projection_bf16.safetensors
 VAE=ltx/ltx-2.3-22b-dev_video_vae.safetensors
 AUDIO_VAE=ltx/ltx-2.3-22b-dev_audio_vae.safetensors
 # Spatial upscaler for two-pass pipeline
-LATENT_UPSCALE_MODEL=ltx-2.3-spatial-upscaler-x2-1.1.safetensors
+LATENT_UPSCALE_MODEL=ltx/ltx-2.3-spatial-upscaler-x2-1.1.safetensors
 # Distilled LoRA (applied model-only at strength 0.6)
 ACCELERATOR_ENABLED=True
 ACCELERATOR_LORA_NAME=ltx/ltx-2.3-22b-distilled-lora-dynamic_fro09_avg_rank_105_bf16.safetensors
