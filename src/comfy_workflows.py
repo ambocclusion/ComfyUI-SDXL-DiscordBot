@@ -193,7 +193,10 @@ async def do_workflow(params: ImageWorkflow, model_definition: ModelDefinition, 
             result = await workflow_type_to_method[params.workflow_type](params, model_definition, interaction)
 
             user_queues[user.id] -= 1
-            await interaction.edit_original_response(attachments=[])
+            try:
+                await interaction.edit_original_response(attachments=[])
+            except Exception:
+                pass  # Interaction token may have expired (e.g. video took > 15 min)
             return result
         except Exception as e:
             print(f"Error during image generation: {e}")
