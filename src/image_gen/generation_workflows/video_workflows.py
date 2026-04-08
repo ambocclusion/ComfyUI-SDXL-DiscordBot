@@ -232,8 +232,9 @@ class LTXWorkflow(VideoWorkflow):
 
     def create_img2img_latents(self, image_input: Image):
         width, height = self._get_dimensions()
+        self.input_image = ResizeImagesByLongerEdge(images=image_input, longer_edge=width)
+        self.input_image = ResizeAndPadImage(image=self.input_image, target_width=width, target_height=height)
         self.latent = EmptyLTXVLatentVideo(width, height, int(self.params.video_length), 1)
-        self.input_image = image_input
         self._has_input_image = True
 
     def enhance_prompt(self):
