@@ -312,7 +312,7 @@ class LTXWorkflow(VideoWorkflow):
     def decode_and_save(self, file_name: str):
         image = VAEDecodeTiled(self.output_latents, self.vae, tile_size=512, overlap=64, temporal_size=2048, temporal_overlap=8)
         audio = LTXVAudioVAEDecode(samples=self.audio_latents, audio_vae=self.audio_vae_model)
-        video = CreateVideo(images=image, audio=audio)
+        video = CreateVideo(images=image, audio=audio, fps=int(self.params.fps or 24))
         self.output_images = SaveVideo(video=video, filename_prefix=file_name)
         return self.output_images
 
