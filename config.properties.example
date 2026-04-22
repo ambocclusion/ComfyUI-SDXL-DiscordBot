@@ -265,8 +265,11 @@ CFG_SCALE=1.0
 BATCH_SIZE=1
 FPS=24
 VIDEO_WIDTH=768
-# Must be 8n+1 (e.g. 97, 121, 161, 241)
-VIDEO_LENGTH=241
+# Default duration for /ltx and /video: short, medium, or long
+DEFAULT_DURATION=medium
+DURATION_SHORT=7
+DURATION_MEDIUM=10
+DURATION_LONG=14
 DEFAULT_STYLE_PROMPT=
 DEFAULT_NEGATIVE_STYLE_PROMPT=blurry, low quality, still frame, frames, watermark, overlay, titles, has blurbox, has subtitles
 

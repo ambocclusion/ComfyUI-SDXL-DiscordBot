@@ -91,12 +91,19 @@ VIDEO_ARG_DESCS = {
     "lora": "LoRA to apply",
 }
 
+LTX_DURATION_CHOICES = [
+    Choice(name="short", value="short"),
+    Choice(name="medium", value="medium"),
+    Choice(name="long", value="long"),
+]
+
 LTX_ARG_DESCS = {
     "prompt": "Prompt for the video being generated",
     "negative_prompt": "Prompt for what you want to steer the AI away from",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "input_file": "Image to use as first frame",
     "lora": "LoRA to apply",
+    "duration": "Duration of the video (short=7s, medium=10s, long=14s)",
 }
 
 BASE_ARG_CHOICES = {
@@ -110,4 +117,5 @@ VIDEO_ARG_CHOICES = {
 
 LTX_ARG_CHOICES = {
     "lora": LTX_LORA_CHOICES[:25],
+    "duration": LTX_DURATION_CHOICES,
 }

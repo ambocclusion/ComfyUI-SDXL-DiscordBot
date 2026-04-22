@@ -322,6 +322,14 @@ class WANCommand(ImageGenCommands):
             )
 
 
+def _get_ltx_duration_seconds() -> dict:
+    return {
+        "short": int(config.get("LTX_GENERATION_DEFAULTS", "DURATION_SHORT", fallback=7)),
+        "medium": int(config.get("LTX_GENERATION_DEFAULTS", "DURATION_MEDIUM", fallback=10)),
+        "long": int(config.get("LTX_GENERATION_DEFAULTS", "DURATION_LONG", fallback=14)),
+    }
+
+
 class LTXCommand(ImageGenCommands):
     def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition, enhance_prompt: bool = False):
         super().__init__(tree, model_definition)
@@ -343,6 +351,7 @@ class LTXCommand(ImageGenCommands):
                 input_file: Attachment = None,
                 seed: int = None,
                 lora: Choice[str] = None,
+                duration: Choice[str] = None,
         ):
             if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
@@ -352,6 +361,11 @@ class LTXCommand(ImageGenCommands):
                 return
 
             generation_defaults = self.model_definition.default_image_workflow
+
+            default_duration = config.get("LTX_GENERATION_DEFAULTS", "DEFAULT_DURATION", fallback="medium")
+            duration_value = duration.value if duration is not None else default_duration
+            duration_seconds = _get_ltx_duration_seconds().get(duration_value)
+            video_length = int(duration_seconds * generation_defaults.fps) + 1 if duration_seconds is not None else generation_defaults.video_length
 
             params = ImageWorkflow(
                 ModelType.LTX,
@@ -374,7 +388,7 @@ class LTXCommand(ImageGenCommands):
                 style_prompt=generation_defaults.style_prompt,
                 negative_style_prompt=generation_defaults.negative_style_prompt,
                 video_width=generation_defaults.video_width,
-                video_length=generation_defaults.video_length,
+                video_length=video_length,
                 clip_model=generation_defaults.clip_model,
                 use_accelerator_lora=generation_defaults.use_accelerator_lora,
                 accelerator_lora_name=generation_defaults.accelerator_lora_name,
