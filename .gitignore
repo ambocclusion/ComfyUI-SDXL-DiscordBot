@@ -4,6 +4,8 @@ out/
 input/
 __pycache__/
 config.properties
+prompts/*.txt
+!prompts/*.example.txt
 *.spec
 /embedded_comfy/
 /venv/

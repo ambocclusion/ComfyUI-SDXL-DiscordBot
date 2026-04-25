@@ -70,6 +70,7 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         get_default_from_config(section, "CLIP_MODEL2"),
         get_default_from_config(section, "AUDIO_VAE"),
         get_default_from_config(section, "LATENT_UPSCALE_MODEL"),
+        get_default_from_config(section, "USE_CUSTOM_SYSTEM_PROMPT", "false").lower() == "true",
     )
     return workflow
 

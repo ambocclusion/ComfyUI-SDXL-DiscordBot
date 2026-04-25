@@ -122,6 +122,15 @@ def get_server_address():
     else:
         return config['LOCAL']['SERVER_ADDRESS']
 
+def load_prompt_file(stem: str) -> str:
+    """Load a prompt file from the prompts/ directory, falling back to the .example.txt variant."""
+    path = f'prompts/{stem}.txt'
+    if not os.path.exists(path):
+        path = f'prompts/{stem}.example.txt'
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read().strip()
+
+
 def get_loras_from_prompt(prompt: str):
     import re
     loras = re.findall(r"<lora:(.*?):(.*?)>", prompt)

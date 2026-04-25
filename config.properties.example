@@ -272,6 +272,9 @@ DURATION_MEDIUM=10
 DURATION_LONG=14
 DEFAULT_STYLE_PROMPT=
 DEFAULT_NEGATIVE_STYLE_PROMPT=blurry, low quality, still frame, frames, watermark, overlay, titles, has blurbox, has subtitles
+# When True, loads system prompt from prompts/ltx_t2v_system_prompt.txt or prompts/ltx_i2v_system_prompt.txt
+# and disables the node's built-in template (use_default_template=False)
+USE_CUSTOM_SYSTEM_PROMPT=False
 
 [ADD_DETAIL_DEFAULTS]
 DENOISE_STRENGTH=0.3

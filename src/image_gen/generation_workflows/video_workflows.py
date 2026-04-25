@@ -8,7 +8,7 @@ from PIL import Image
 from comfy_script.runtime import ImageBatchResult
 from comfy_script.runtime.nodes import *
 from src.image_gen.generation_workflows.image_workflows import SDWorkflow
-from src.util import read_config
+from src.util import read_config, load_prompt_file
 
 config = read_config()
 comfy_root_directory = config["LOCAL"]["COMFY_ROOT_DIR"]
@@ -240,21 +240,40 @@ class LTXWorkflow(VideoWorkflow):
     def enhance_prompt(self):
         if not self.params.enhance_ltx_prompt:
             return
-        self._enhanced_prompt = TextGenerateLTX2Prompt(
-            self.clip,
-            self.params.prompt,
-            1024,
-            'on',
-            image=self.input_image if self._has_input_image else None,
-            **{
-                'sampling_mode.seed': self.params.seed or 0,
-                'sampling_mode.temperature': 0.7,
-                'sampling_mode.top_k': 64,
-                'sampling_mode.top_p': 0.95,
-                'sampling_mode.min_p': 0.05,
-                'sampling_mode.repetition_penalty': 1.05,
-            }
-        )
+        sampling_kwargs = {
+            'sampling_mode.seed': self.params.seed or 0,
+            'sampling_mode.temperature': 0.7,
+            'sampling_mode.top_k': 64,
+            'sampling_mode.top_p': 0.95,
+            'sampling_mode.min_p': 0.05,
+            'sampling_mode.repetition_penalty': 1.05,
+        }
+        if self.params.use_custom_system_prompt:
+            stem = 'ltx_i2v_system_prompt' if self._has_input_image else 'ltx_t2v_system_prompt'
+            system_prompt = load_prompt_file(stem)
+            if self._has_input_image:
+                formatted_prompt = f"<start_of_turn>system\n{system_prompt}<end_of_turn>\n<start_of_turn>user\n\n<image_soft_token>\n\nUser Raw Input Prompt: {self.params.prompt}.<end_of_turn>\n<start_of_turn>model\n"
+            else:
+                formatted_prompt = f"<start_of_turn>system\n{system_prompt}<end_of_turn>\n<start_of_turn>user\nUser Raw Input Prompt: {self.params.prompt}.<end_of_turn>\n<start_of_turn>model\n"
+            self._enhanced_prompt = TextGenerate(
+                clip=self.clip,
+                prompt=formatted_prompt,
+                max_length=1024,
+                sampling_mode='on',
+                image=self.input_image if self._has_input_image else None,
+                use_default_template=False,
+                **sampling_kwargs,
+            )
+        else:
+            self._enhanced_prompt = TextGenerateLTX2Prompt(
+                clip=self.clip,
+                prompt=self.params.prompt,
+                max_length=1024,
+                sampling_mode='on',
+                image=self.input_image if self._has_input_image else None,
+                use_default_template=True,
+                **sampling_kwargs,
+            )
 
     def condition_prompts(self):
         self.conditioning = CLIPTextEncode(self._get_prompt(), self.clip)
