@@ -174,6 +174,18 @@ if [ -f "requirements.txt" ]; then
 fi
 
 
+cd "$EMBEDDED_COMFY_LOCATION/custom_nodes"
+if [ ! -d ComfyUI-KJNodes ]; then
+  git clone https://github.com/kijai/ComfyUI-KJNodes.git
+  echo "cloned ComfyUI-KJNodes"
+fi
+cd ComfyUI-KJNodes
+git pull
+if [ -f "requirements.txt" ]; then
+    PIP_INSTALL_ARGS+=("-r" "$EMBEDDED_COMFY_LOCATION/custom_nodes/ComfyUI-KJNodes/requirements.txt")
+fi
+
+
 cd "$EMBEDDED_COMFY_LOCATION/models/checkpoints"
 mkdir -p xl 15 cascade pony svd
 
