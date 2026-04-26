@@ -102,6 +102,7 @@ LTX_ARG_DESCS = {
     "negative_prompt": "Prompt for what you want to steer the AI away from",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "input_file": "Image to use as first frame",
+    "audio_file": "Audio file to guide video generation (trimmed/padded to video duration)",
     "lora": "LoRA to apply",
     "duration": "Duration of the video (short=7s, medium=10s, long=14s)",
 }

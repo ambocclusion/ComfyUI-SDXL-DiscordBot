@@ -98,3 +98,4 @@ class ImageWorkflow:
     audio_vae: Optional[str] = None,
     latent_upscale_model: Optional[str] = None,
     use_custom_system_prompt: Optional[bool] = None,
+    audio_filename: Optional[str] = None,

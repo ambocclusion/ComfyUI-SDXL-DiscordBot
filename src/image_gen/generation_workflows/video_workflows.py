@@ -218,6 +218,7 @@ class LTXWorkflow(VideoWorkflow):
         self.upscale_model = LatentUpscaleModelLoader(self.params.latent_upscale_model)
 
         self._has_input_image = False
+        self.encoded_audio = None
 
     def _get_dimensions(self):
         width = int(self.params.video_width) if self.params.video_width else 768
@@ -289,13 +290,22 @@ class LTXWorkflow(VideoWorkflow):
                 self.input_image, 0, 1.0
             )
 
-        # Concat video latent with empty audio latent for AV pipeline
-        audio_latent = LTXVEmptyLatentAudio(
-            frames_number=int(self.params.video_length),
-            frame_rate=int(self.params.fps or 24),
-            batch_size=1,
-            audio_vae=self.audio_vae_model,
-        )
+        # Build audio latent: encode provided audio (with zero noise mask to preserve it),
+        # or fall back to empty generated audio.
+        if self.params.audio_filename:
+            audio = LoadAudio(self.params.audio_filename)
+            self.encoded_audio = LTXVAudioVAEEncode(audio, self.audio_vae_model)
+            width, height = self._get_dimensions()
+            mask = SolidMask(0.0, width, height)
+            audio_latent = SetLatentNoiseMask(self.encoded_audio, mask)
+        else:
+            self.encoded_audio = None
+            audio_latent = LTXVEmptyLatentAudio(
+                frames_number=int(self.params.video_length),
+                frame_rate=int(self.params.fps or 24),
+                batch_size=1,
+                audio_vae=self.audio_vae_model,
+            )
         self.latent = LTXVConcatAVLatent(self.latent, audio_latent)
 
     def sample(self, use_ays: bool = False):
@@ -310,14 +320,17 @@ class LTXWorkflow(VideoWorkflow):
         )
 
         # Separate AV, upscale video, crop guide keyframes
-        video_latent, audio_latent = LTXVSeparateAVLatent(coarse_out)
+        video_latent, pass1_audio = LTXVSeparateAVLatent(coarse_out)
         video_latent = LTXVLatentUpsampler(video_latent, self.upscale_model, self.vae)
         positive2, negative2, _ = LTXVCropGuides(self.conditioning, self.negative_conditioning, video_latent)
 
-        # Pass 2: refinement with euler on upscaled latent
+        # Pass 2: refinement with euler on upscaled latent.
+        # When audio was provided, use the original encoding as the guide rather than
+        # the audio that passed through the coarse sampler.
+        audio_for_pass2 = self.encoded_audio if self.encoded_audio is not None else pass1_audio
         noise2 = RandomNoise(self.params.seed)
         guider2 = CFGGuider(self.model, positive2, negative2, self.params.cfg_scale)
-        combined = LTXVConcatAVLatent(video_latent, audio_latent)
+        combined = LTXVConcatAVLatent(video_latent, audio_for_pass2)
         _, refined_out = SamplerCustomAdvanced(
             noise2, guider2,
             KSamplerSelect('euler'),
@@ -325,8 +338,11 @@ class LTXWorkflow(VideoWorkflow):
             combined,
         )
 
-        # Separate final video latent for decoding
-        self.output_latents, self.audio_latents = LTXVSeparateAVLatent(refined_out)
+        # Separate final video latent for decoding.
+        # When audio was provided, use the original VAE-encoded audio for output rather
+        # than the sampler's output — the refine sigmas would otherwise regenerate it.
+        self.output_latents, sampled_audio = LTXVSeparateAVLatent(refined_out)
+        self.audio_latents = self.encoded_audio if self.encoded_audio is not None else sampled_audio
 
     def decode_and_save(self, file_name: str):
         image = VAEDecodeTiled(self.output_latents, self.vae, tile_size=512, overlap=64, temporal_size=2048, temporal_overlap=8)

@@ -131,6 +131,32 @@ def load_prompt_file(stem: str) -> str:
         return f.read().strip()
 
 
+async def process_audio_attachment(attachment: Attachment, interaction: Interaction, duration_seconds: float = None) -> str:
+    os.makedirs("./input", exist_ok=True)
+    fp = f"./input/{attachment.filename}"
+    await attachment.save(fp)
+    if duration_seconds is not None:
+        fp = _trim_or_pad_audio(fp, duration_seconds)
+    return os.path.abspath(fp)
+
+
+def _trim_or_pad_audio(audio_path: str, target_seconds: float) -> str:
+    try:
+        import subprocess
+        out_path = os.path.splitext(audio_path)[0] + '_processed.wav'
+        # atrim crops to target duration; apad pads silence up to target duration
+        cmd = [
+            'ffmpeg', '-y', '-i', audio_path,
+            '-af', f'atrim=duration={target_seconds},apad=whole_dur={target_seconds}',
+            out_path,
+        ]
+        subprocess.run(cmd, check=True, capture_output=True)
+        return out_path
+    except Exception as e:
+        print(f"Warning: audio trim/pad failed ({e}), using original file")
+        return audio_path
+
+
 def get_loras_from_prompt(prompt: str):
     import re
     loras = re.findall(r"<lora:(.*?):(.*?)>", prompt)

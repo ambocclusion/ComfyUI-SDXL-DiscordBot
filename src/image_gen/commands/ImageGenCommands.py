@@ -11,7 +11,7 @@ from src.consts import *
 from src.image_gen.collage_utils import create_collage
 from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.ui.buttons import Buttons
-from src.util import process_attachment, unpack_choices, should_filter, get_filename
+from src.util import process_attachment, process_audio_attachment, unpack_choices, should_filter, get_filename
 
 logger = logging.getLogger("bot")
 
@@ -349,6 +349,7 @@ class LTXCommand(ImageGenCommands):
                 negative_prompt: str = None,
                 cfg_scale: Range[float, 1.0, MAX_CFG] = None,
                 input_file: Attachment = None,
+                audio_file: Attachment = None,
                 seed: int = None,
                 lora: Choice[str] = None,
                 duration: Choice[str] = None,
@@ -360,12 +361,24 @@ class LTXCommand(ImageGenCommands):
                 )
                 return
 
+            if audio_file is not None and not audio_file.content_type.startswith("audio/"):
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Only audio files (MP3, WAV, OGG, etc.) are supported for audio input`",
+                    ephemeral=True,
+                )
+                return
+
             generation_defaults = self.model_definition.default_image_workflow
 
             default_duration = config.get("LTX_GENERATION_DEFAULTS", "DEFAULT_DURATION", fallback="medium")
             duration_value = duration.value if duration is not None else default_duration
             duration_seconds = _get_ltx_duration_seconds().get(duration_value)
             video_length = int(duration_seconds * generation_defaults.fps) + 1 if duration_seconds is not None else generation_defaults.video_length
+
+            audio_fp = None
+            if audio_file is not None:
+                audio_duration = video_length / (generation_defaults.fps or 24)
+                audio_fp = await process_audio_attachment(audio_file, interaction, audio_duration)
 
             params = ImageWorkflow(
                 ModelType.LTX,
@@ -396,6 +409,7 @@ class LTXCommand(ImageGenCommands):
                 clip_model2=generation_defaults.clip_model2,
                 audio_vae=generation_defaults.audio_vae,
                 latent_upscale_model=generation_defaults.latent_upscale_model,
+                audio_filename=audio_fp,
             )
             label = "LTX (enhanced)" if enhance_prompt else "LTX"
             await self._do_request(
