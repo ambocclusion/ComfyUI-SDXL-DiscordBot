@@ -45,6 +45,7 @@ def should_filter_model(m, command):
 
 VIDEO_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "wan")]
 LTX_LORA_CHOICES = [Choice(name=l.replace(".safetensors", ""), value=l) for l in loras if not should_filter_model(l, "ltx")]
+LTX_MODEL_CHOICES = [Choice(name=m.replace(".safetensors", "").replace(".gguf", ""), value=m) for m in models if not should_filter_model(m, "ltx")]
 SAMPLER_CHOICES = [Choice(name=s, value=s) for s in samplers if "adaptive" not in s.lower()]
 SCHEDULER_CHOICES = [Choice(name=s, value=s) for s in schedulers]
 
@@ -97,9 +98,17 @@ LTX_DURATION_CHOICES = [
     Choice(name="long", value="long"),
 ]
 
+LTX_ASPECT_RATIO_CHOICES = [
+    Choice(name="16:9 landscape", value="16:9"),
+    Choice(name="9:16 portrait", value="9:16"),
+    Choice(name="1:1 square", value="1:1"),
+]
+
 LTX_ARG_DESCS = {
     "prompt": "Prompt for the video being generated",
     "negative_prompt": "Prompt for what you want to steer the AI away from",
+    "model": "Model checkpoint to use",
+    "aspect_ratio": "Aspect ratio of the generated video",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "input_file": "Image to use as first frame",
     "audio_file": "Audio file to guide video generation (trimmed/padded to video duration)",
@@ -117,6 +126,8 @@ VIDEO_ARG_CHOICES = {
 }
 
 LTX_ARG_CHOICES = {
+    "model": LTX_MODEL_CHOICES[:25],
+    "aspect_ratio": LTX_ASPECT_RATIO_CHOICES,
     "lora": LTX_LORA_CHOICES[:25],
     "duration": LTX_DURATION_CHOICES,
 }

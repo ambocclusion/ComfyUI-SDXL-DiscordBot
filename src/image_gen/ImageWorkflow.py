@@ -30,6 +30,12 @@ sd_aspect_ratios = {
     "16:9 landscape": (1344, 768),
 }
 
+ltx_aspect_ratios = {
+    "16:9": (768, 416),
+    "9:16": (416, 768),
+    "1:1": (576, 576),
+}
+
 class ControlnetTypes(Enum):
     pose = "pose",
     canny = "canny",
@@ -99,3 +105,4 @@ class ImageWorkflow:
     latent_upscale_model: Optional[str] = None,
     use_custom_system_prompt: Optional[bool] = None,
     audio_filename: Optional[str] = None,
+    video_height: Optional[int] = None

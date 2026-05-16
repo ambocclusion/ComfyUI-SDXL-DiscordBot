@@ -223,7 +223,10 @@ class LTXWorkflow(VideoWorkflow):
     def _get_dimensions(self):
         width = int(self.params.video_width) if self.params.video_width else 768
         width = (width // 32) * 32
-        height = (width * 9 // 16 // 32) * 32
+        if self.params.video_height:
+            height = (int(self.params.video_height) // 32) * 32
+        else:
+            height = (width * 9 // 16 // 32) * 32
         return width, height
 
     def create_latents(self):

@@ -7,6 +7,7 @@ from discord.app_commands import Range
 
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import *
+from src.image_gen.ImageWorkflow import ltx_aspect_ratios
 from src.consts import *
 from src.image_gen.collage_utils import create_collage
 from src.image_gen.nsfw_detection import check_nsfw
@@ -347,6 +348,8 @@ class LTXCommand(ImageGenCommands):
                 interaction: discord.Interaction,
                 prompt: str,
                 negative_prompt: str = None,
+                model: str = None,
+                aspect_ratio: str = None,
                 cfg_scale: Range[float, 1.0, MAX_CFG] = None,
                 input_file: Attachment = None,
                 audio_file: Attachment = None,
@@ -380,12 +383,18 @@ class LTXCommand(ImageGenCommands):
                 audio_duration = video_length / (generation_defaults.fps or 24)
                 audio_fp = await process_audio_attachment(audio_file, interaction, audio_duration)
 
+            if aspect_ratio is not None and aspect_ratio in ltx_aspect_ratios:
+                video_width, video_height = ltx_aspect_ratios[aspect_ratio]
+            else:
+                video_width = generation_defaults.video_width
+                video_height = None
+
             params = ImageWorkflow(
                 ModelType.LTX,
                 WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
                 prompt,
                 negative_prompt,
-                generation_defaults.model,
+                model or generation_defaults.model,
                 unpack_choices(lora, None),
                 [1.0, 1.0],
                 num_steps=generation_defaults.num_steps,
@@ -400,7 +409,8 @@ class LTXCommand(ImageGenCommands):
                 filename=await process_attachment(input_file, interaction) if input_file is not None else None,
                 style_prompt=generation_defaults.style_prompt,
                 negative_style_prompt=generation_defaults.negative_style_prompt,
-                video_width=generation_defaults.video_width,
+                video_width=video_width,
+                video_height=video_height,
                 video_length=video_length,
                 clip_model=generation_defaults.clip_model,
                 use_accelerator_lora=generation_defaults.use_accelerator_lora,
