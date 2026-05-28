@@ -114,6 +114,7 @@ LTX_ARG_DESCS = {
     "audio_file": "Audio file to guide video generation (trimmed/padded to video duration)",
     "lora": "LoRA to apply",
     "duration": "Duration of the video (short=7s, medium=10s, long=14s)",
+    "end_image": "Image to use as last frame",
 }
 
 BASE_ARG_CHOICES = {

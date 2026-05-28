@@ -352,6 +352,7 @@ class LTXCommand(ImageGenCommands):
                 aspect_ratio: str = None,
                 cfg_scale: Range[float, 1.0, MAX_CFG] = None,
                 input_file: Attachment = None,
+                end_image: Attachment = None,
                 audio_file: Attachment = None,
                 seed: int = None,
                 lora: Choice[str] = None,
@@ -360,6 +361,13 @@ class LTXCommand(ImageGenCommands):
             if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
                     f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
+                    ephemeral=True,
+                )
+                return
+
+            if end_image is not None and end_image.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for end frame`",
                     ephemeral=True,
                 )
                 return
@@ -407,6 +415,7 @@ class LTXCommand(ImageGenCommands):
                 fps=generation_defaults.fps,
                 vae=generation_defaults.vae,
                 filename=await process_attachment(input_file, interaction) if input_file is not None else None,
+                end_image=await process_attachment(end_image, interaction) if end_image is not None else None,
                 style_prompt=generation_defaults.style_prompt,
                 negative_style_prompt=generation_defaults.negative_style_prompt,
                 video_width=video_width,

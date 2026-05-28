@@ -105,4 +105,5 @@ class ImageWorkflow:
     latent_upscale_model: Optional[str] = None,
     use_custom_system_prompt: Optional[bool] = None,
     audio_filename: Optional[str] = None,
-    video_height: Optional[int] = None
+    video_height: Optional[int] = None,
+    end_image: Optional[str] = None

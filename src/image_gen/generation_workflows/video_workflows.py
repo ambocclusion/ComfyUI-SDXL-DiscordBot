@@ -286,11 +286,35 @@ class LTXWorkflow(VideoWorkflow):
             self.conditioning, self.negative_conditioning, float(self.params.fps or 24)
         )
 
-        # Add input image as first-frame guide for img2video
-        if self._has_input_image:
+        has_end_image = bool(self.params.end_image)
+        if has_end_image:
+            width, height = self._get_dimensions()
+            end_img = LoadImage(self.params.end_image)[0]
+            end_img = ResizeImagesByLongerEdge(images=end_img, longer_edge=width)
+            end_img = ResizeAndPadImage(image=end_img, target_width=width, target_height=height)
+            last_frame = int(self.params.video_length) - 1
+
+        if self._has_input_image and has_end_image:
+            self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuideMulti(
+                self.conditioning, self.negative_conditioning, self.vae, self.latent,
+                **{
+                    "num_guides": "2",
+                    "num_guides.image_1": self.input_image, "num_guides.frame_idx_1": 0, "num_guides.strength_1": 1.0,
+                    "num_guides.image_2": end_img, "num_guides.frame_idx_2": last_frame, "num_guides.strength_2": 1.0,
+                }
+            )
+        elif self._has_input_image:
             self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuide(
                 self.conditioning, self.negative_conditioning, self.vae, self.latent,
                 self.input_image, 0, 1.0
+            )
+        elif has_end_image:
+            self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuideMulti(
+                self.conditioning, self.negative_conditioning, self.vae, self.latent,
+                **{
+                    "num_guides": "1",
+                    "num_guides.image_1": end_img, "num_guides.frame_idx_1": last_frame, "num_guides.strength_1": 1.0,
+                }
             )
 
         # Build audio latent: encode provided audio (with zero noise mask to preserve it),
