@@ -71,6 +71,9 @@ def get_defaults_for_command(section: str, model_type: ModelType, slash_command:
         get_default_from_config(section, "AUDIO_VAE"),
         get_default_from_config(section, "LATENT_UPSCALE_MODEL"),
         get_default_from_config(section, "USE_CUSTOM_SYSTEM_PROMPT", "false").lower() == "true",
+        None,  # audio_filename
+        None,  # video_height
+        None,  # end_image
         float(get_default_from_config(section, "VIDEO_START_IMAGE_STRENGTH", 1)),
         float(get_default_from_config(section, "VIDEO_END_IMAGE_STRENGTH", 0.8))
     )
