@@ -354,6 +354,8 @@ class LTXCommand(ImageGenCommands):
                 input_file: Attachment = None,
                 end_image: Attachment = None,
                 audio_file: Attachment = None,
+                input_file_image_strength: Optional[float] = None,
+                end_image_strength: Optional[float] = None,
                 seed: int = None,
                 lora: Choice[str] = None,
                 duration: Choice[str] = None,
@@ -429,6 +431,9 @@ class LTXCommand(ImageGenCommands):
                 audio_vae=generation_defaults.audio_vae,
                 latent_upscale_model=generation_defaults.latent_upscale_model,
                 audio_filename=audio_fp,
+                video_start_image_strength=input_file_image_strength or generation_defaults.video_start_image_strength,
+                video_end_image_strength=end_image_strength or generation_defaults.video_end_image_strength
+                
             )
             label = "LTX (enhanced)" if enhance_prompt else "LTX"
             await self._do_request(

@@ -115,6 +115,8 @@ LTX_ARG_DESCS = {
     "lora": "LoRA to apply",
     "duration": "Duration of the video (short=7s, medium=10s, long=14s)",
     "end_image": "Image to use as last frame",
+    "input_file_image_strength": "range [0.0, 1.0]; How much the video's first frame will resemble the input image",
+    "end_image_strength": "range [0.0, 1.0]; How much the video's last frame will resemble the end image",
 }
 
 BASE_ARG_CHOICES = {

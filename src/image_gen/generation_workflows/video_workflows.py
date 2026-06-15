@@ -237,7 +237,7 @@ class LTXWorkflow(VideoWorkflow):
     def create_img2img_latents(self, image_input: Image):
         width, height = self._get_dimensions()
         self.input_image = ResizeImagesByLongerEdge(images=image_input, longer_edge=width)
-        self.input_image = ResizeAndPadImage(image=self.input_image, target_width=width, target_height=height)
+        self.input_image = ResizeAndPadImage(image=self.input_image, target_width=width, target_height=height, padding_color='white', interpolation='lanczos')
         self.latent = EmptyLTXVLatentVideo(width, height, int(self.params.video_length), 1)
         self._has_input_image = True
 
@@ -291,7 +291,7 @@ class LTXWorkflow(VideoWorkflow):
             width, height = self._get_dimensions()
             end_img = LoadImage(self.params.end_image)[0]
             end_img = ResizeImagesByLongerEdge(images=end_img, longer_edge=width)
-            end_img = ResizeAndPadImage(image=end_img, target_width=width, target_height=height)
+            end_img = ResizeAndPadImage(image=end_img, target_width=width, target_height=height, padding_color='white', interpolation='lanczos')
             last_frame = int(self.params.video_length) - 1
 
         if self._has_input_image and has_end_image:
@@ -299,21 +299,21 @@ class LTXWorkflow(VideoWorkflow):
                 self.conditioning, self.negative_conditioning, self.vae, self.latent,
                 **{
                     "num_guides": "2",
-                    "num_guides.image_1": self.input_image, "num_guides.frame_idx_1": 0, "num_guides.strength_1": 1.0,
-                    "num_guides.image_2": end_img, "num_guides.frame_idx_2": last_frame, "num_guides.strength_2": 1.0,
+                    "num_guides.image_1": self.input_image, "num_guides.frame_idx_1": 0, "num_guides.strength_1": self.params.video_start_image_strength,
+                    "num_guides.image_2": end_img, "num_guides.frame_idx_2": last_frame, "num_guides.strength_2": self.params.video_end_image_strength
                 }
             )
         elif self._has_input_image:
             self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuide(
                 self.conditioning, self.negative_conditioning, self.vae, self.latent,
-                self.input_image, 0, 1.0
+                self.input_image, 0, self.params.video_start_image_strength
             )
         elif has_end_image:
             self.conditioning, self.negative_conditioning, self.latent = LTXVAddGuideMulti(
                 self.conditioning, self.negative_conditioning, self.vae, self.latent,
                 **{
                     "num_guides": "1",
-                    "num_guides.image_1": end_img, "num_guides.frame_idx_1": last_frame, "num_guides.strength_1": 1.0,
+                    "num_guides.image_1": end_img, "num_guides.frame_idx_1": last_frame, "num_guides.strength_1": self.params.video_end_image_strength,
                 }
             )
 
