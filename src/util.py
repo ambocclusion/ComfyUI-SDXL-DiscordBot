@@ -36,6 +36,23 @@ def sanitize_lora_name(name: str) -> str:
     return "/".join(parts)
 
 
+def sanitize_model_name(name):
+    """Strip path-traversal from an untrusted model/checkpoint name.
+
+    Model names reach ComfyUI's checkpoint/UNet loaders, and a ``.ckpt``/``.pt``
+    load goes through ``torch.load`` (pickle). Free-text entry points (e.g. the
+    "Edit → Models" modal) must not be able to point that loader at an arbitrary
+    file via ``../`` traversal, so keep any legitimate subfolder structure but
+    remove empty, ``.`` and ``..`` components and any leading slash. ``None`` is
+    passed through so default handling downstream is unaffected.
+    """
+    if not name:
+        return name
+    cleaned = str(name).strip().replace("\\", "/")
+    parts = [p for p in cleaned.split("/") if p not in ("", ".", "..")]
+    return "/".join(parts)
+
+
 def read_config():
     config = configparser.ConfigParser()
     config.read("config.properties", encoding='utf8')

@@ -14,7 +14,7 @@ from src.defaults import *
 from src.image_gen.collage_utils import create_collage, create_gif_collage
 from src.image_gen.model_definitions.model_definitions import UpscaleModelDefinition
 from src.image_gen.nsfw_detection import check_nsfw
-from src.util import get_filename, build_command, get_workflow
+from src.util import get_filename, build_command, get_workflow, should_filter
 
 UPSCALE_DEFAULTS = get_defaults_for_command(f"UPSCALE_DEFAULTS", None, "upscale")
 ADD_DETAIL_DEFAULTS = get_defaults_for_command(f"ADD_DETAIL_DEFAULTS", None, "upscale") 
@@ -391,6 +391,15 @@ class EditResponse(discord.ui.View):
                 params.prompt = self.positive_prompt.value
                 params.negative_prompt = self.negative_prompt.value
 
+                # Apply the same blocked-word filter as the slash command so it
+                # can't be bypassed by editing the prompt after generation.
+                if should_filter(params.prompt):
+                    await interaction.response.send_message(
+                        "Your prompt contains a blocked word, so this request can't be processed.",
+                        ephemeral=True,
+                    )
+                    return
+
                 await self.owner.generate_with_new_params(interaction, params)
 
         prompt_modal = EditPromptModal(self.params, self.command, self)
@@ -584,6 +593,16 @@ class EditResponse(discord.ui.View):
                 params = deepcopy(self.params)
                 params.prompt = self.prompt.value
                 params.inpainting_prompt = self.inpainting_prompt.value
+
+                # Enforce the blocked-word filter here too; this modal otherwise
+                # reaches do_workflow without passing through the slash-command check.
+                if should_filter(params.prompt) or should_filter(params.inpainting_prompt):
+                    await interaction.response.send_message(
+                        "Your prompt contains a blocked word, so this request can't be processed.",
+                        ephemeral=True,
+                    )
+                    return
+
                 params.inpainting_detection_threshold = float(self.inpainting_threshold.value)
                 params.denoise_strength = self.denoising_strength.value
                 selection = int(self.selection.value) - 1

@@ -16,7 +16,7 @@ from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
 from src.image_gen.model_definitions.model_definitions import UpscaleModelDefinition
 from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.generation_workflows.image_workflows import UpscaleWorkflow, Lora
-from src.util import get_loras_from_prompt
+from src.util import get_loras_from_prompt, sanitize_lora_name, sanitize_model_name
 
 config = configparser.ConfigParser()
 config.read("config.properties", encoding="utf8")
@@ -179,6 +179,14 @@ async def do_workflow(params: ImageWorkflow, model_definition: ModelDefinition, 
                 params.use_align_your_steps = False
             else:
                 params.use_align_your_steps = True if params.model_type != ModelType.SD3 else False
+
+            # Model and LoRA names can arrive from free-text entry points (e.g. the
+            # "Edit → Models" modal) and reach ComfyUI's checkpoint/LoRA loaders, so
+            # strip any path traversal before they are used to resolve a file.
+            params.model = sanitize_model_name(params.model)
+            for lora in loras:
+                if lora.name and lora.name != "None":
+                    lora.name = sanitize_lora_name(lora.name) or lora.name
 
             params.lora_dict = loras
 

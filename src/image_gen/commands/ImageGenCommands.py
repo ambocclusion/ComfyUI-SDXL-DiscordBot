@@ -88,7 +88,9 @@ class ImageGenCommands:
             await interaction.channel.send(content=final_message, file=discord.File(fp=collage_path, filename=fname, spoiler=is_nsfw), view=buttons)
         except Exception as e:
             logger.exception("Error generating image: %s for command %s with params %s", e, command_name, params)
-            await interaction.channel.send(f"{interaction.user.mention} `Error generating image: {e} for command {command_name}`")
+            # Don't echo the raw exception to the channel: it can leak internal
+            # filesystem paths or config values. Full detail is in the server logs.
+            await interaction.channel.send(f"{interaction.user.mention} `Error generating image for command {command_name}`")
 
 
 class ImageGenerationCommand(ImageGenCommands):
