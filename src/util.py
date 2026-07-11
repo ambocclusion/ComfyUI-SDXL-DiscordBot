@@ -1,8 +1,39 @@
 import configparser
 import os
+import re
 
 from discord import Interaction, Attachment
 from src.image_gen import ImageWorkflow
+
+
+def sanitize_filename(filename: str, default: str = "upload") -> str:
+    """Return a safe basename for an untrusted (attacker-controlled) upload filename.
+
+    Discord attachment filenames come straight from the uploader's multipart
+    request, so they may contain path separators or `..` traversal sequences.
+    Strip everything but a conservative basename so a crafted upload can only
+    ever land inside the intended directory.
+    """
+    name = os.path.basename(filename or "")
+    # Reject NUL and other separators the basename call may miss on some platforms.
+    name = name.replace("\\", "_").replace("/", "_").replace("\x00", "")
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", name)
+    # Guard against empty names or ones made only of dots (e.g. "" or "..").
+    if not name or set(name) <= {"."}:
+        name = default
+    return name
+
+
+def sanitize_lora_name(name: str) -> str:
+    """Return a traversal-safe LoRA path from an untrusted prompt-supplied name.
+
+    LoRA names may legitimately include a subfolder (``subdir/name``), so keep
+    forward-slash structure but drop empty, ``.`` and ``..`` components and any
+    leading slash so the name can never escape the loras directory.
+    """
+    name = (name or "").strip().replace("\\", "/")
+    parts = [p for p in name.split("/") if p not in ("", ".", "..")]
+    return "/".join(parts)
 
 
 def read_config():
@@ -53,7 +84,11 @@ def unpack_choices(*args):
 
 
 def get_filename(interaction: Interaction, params: ImageWorkflow):
-    return f"{interaction.user.name}_{params.prompt[:10]}_{params.seed}"
+    # The prompt (and, defensively, the username) are untrusted and get embedded
+    # into on-disk save paths, so collapse the result to a single safe component
+    # to prevent `../` traversal into arbitrary write locations.
+    raw = f"{interaction.user.name}_{(params.prompt or '')[:10]}_{params.seed}"
+    return sanitize_filename(raw)
 
 
 def build_command(params: ImageWorkflow):
@@ -88,9 +123,9 @@ async def process_attachment(attachment: Attachment, interaction: Interaction):
         await interaction.response.send_message("Error: Please upload a PNG or JPEG image", ephemeral=True)
         return None
 
-    os.makedirs("../input", exist_ok=True)
+    os.makedirs("./input", exist_ok=True)
 
-    fp = f"./input/{attachment.filename}"
+    fp = f"./input/{sanitize_filename(attachment.filename)}"
     await attachment.save(fp)
 
     if attachment.width > 1024 or attachment.height > 1024:
@@ -133,7 +168,7 @@ def load_prompt_file(stem: str) -> str:
 
 async def process_audio_attachment(attachment: Attachment, interaction: Interaction, duration_seconds: float = None) -> str:
     os.makedirs("./input", exist_ok=True)
-    fp = f"./input/{attachment.filename}"
+    fp = f"./input/{sanitize_filename(attachment.filename)}"
     await attachment.save(fp)
     if duration_seconds is not None:
         fp = _trim_or_pad_audio(fp, duration_seconds)
@@ -158,9 +193,18 @@ def _trim_or_pad_audio(audio_path: str, target_seconds: float) -> str:
 
 
 def get_loras_from_prompt(prompt: str):
-    import re
     loras = re.findall(r"<lora:(.*?):(.*?)>", prompt)
-    return [[lora[0], float(lora[1])] for lora in loras]
+    result = []
+    for name, strength in loras:
+        safe_name = sanitize_lora_name(name)
+        if not safe_name:
+            continue
+        try:
+            result.append([safe_name, float(strength)])
+        except (TypeError, ValueError):
+            # Ignore malformed strengths instead of crashing the whole request.
+            continue
+    return result
 
 def get_workflow(image, image_workflow: ImageWorkflow = None):
     info = image.info
