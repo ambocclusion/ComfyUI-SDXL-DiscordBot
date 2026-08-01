@@ -7,12 +7,13 @@ from discord.app_commands import Range
 
 from src.ModelDefinition import ModelDefinition
 from src.command_descriptions import *
-from src.image_gen.ImageWorkflow import ltx_aspect_ratios
+from src.image_gen.ImageWorkflow import ltx_aspect_ratios, VideoInputType
 from src.consts import *
 from src.image_gen.collage_utils import create_collage
 from src.image_gen.nsfw_detection import check_nsfw
 from src.image_gen.ui.buttons import Buttons
-from src.util import process_attachment, process_audio_attachment, unpack_choices, should_filter, get_filename
+from src.image_gen.video_input import resolve_video_input
+from src.util import process_attachment, process_audio_attachment, process_video_attachment, unpack_choices, should_filter, get_filename
 
 logger = logging.getLogger("bot")
 
@@ -333,6 +334,12 @@ def _get_ltx_duration_seconds() -> dict:
     }
 
 
+def _get_max_input_video_seconds() -> float:
+    """Cap an uploaded video at a multiple of the longest generatable duration."""
+    multiplier = float(config.get("LTX_GENERATION_DEFAULTS", "INPUT_VIDEO_MAX_LENGTH_MULTIPLIER", fallback=3))
+    return max(_get_ltx_duration_seconds().values()) * multiplier
+
+
 class LTXCommand(ImageGenCommands):
     def __init__(self, tree: discord.app_commands.CommandTree, model_definition: ModelDefinition, enhance_prompt: bool = False):
         super().__init__(tree, model_definition)
@@ -354,6 +361,7 @@ class LTXCommand(ImageGenCommands):
                 aspect_ratio: str = None,
                 cfg_scale: Range[float, 1.0, MAX_CFG] = None,
                 input_file: Attachment = None,
+                input_video: Attachment = None,
                 end_image: Attachment = None,
                 audio_file: Attachment = None,
                 input_file_image_strength: Optional[float] = None,
@@ -362,6 +370,13 @@ class LTXCommand(ImageGenCommands):
                 lora: Choice[str] = None,
                 duration: Choice[str] = None,
         ):
+            if input_file is not None and input_video is not None:
+                await interaction.response.send_message(
+                    f"{interaction.user.mention} `Use either input_file or input_video for the starting frame, not both`",
+                    ephemeral=True,
+                )
+                return
+
             if input_file is not None and input_file.content_type not in ["image/png", "image/jpeg", "image/jpg"]:
                 await interaction.response.send_message(
                     f"{interaction.user.mention} `Only PNG, JPG, and JPEG images are supported for video generation`",
@@ -401,9 +416,33 @@ class LTXCommand(ImageGenCommands):
                 video_width = generation_defaults.video_width
                 video_height = None
 
+            # An input video is currently always turned into a starting frame ("generate
+            # from last frame"), so it feeds the same img2img path as an input image.
+            video_fp = None
+            input_video_type = None
+            start_frame_fp = None
+            if input_video is not None:
+                input_video_type = VideoInputType.last_frame
+                video_fp = await process_video_attachment(input_video, interaction, _get_max_input_video_seconds())
+                if video_fp is None:
+                    return
+                try:
+                    start_frame_fp = resolve_video_input(video_fp, input_video_type)
+                except Exception as e:
+                    logger.exception("Failed to extract a frame from input video %s: %s", video_fp, e)
+                    await interaction.response.send_message(
+                        f"{interaction.user.mention} `Could not read a frame from that video.`",
+                        ephemeral=True,
+                    )
+                    return
+            elif input_file is not None:
+                start_frame_fp = await process_attachment(input_file, interaction)
+                if start_frame_fp is None:
+                    return
+
             params = ImageWorkflow(
                 ModelType.LTX,
-                WorkflowType.txt2img if input_file is None else WorkflowType.img2img,
+                WorkflowType.txt2img if start_frame_fp is None else WorkflowType.img2img,
                 prompt,
                 negative_prompt,
                 model or generation_defaults.model,
@@ -418,7 +457,7 @@ class LTXCommand(ImageGenCommands):
                 scheduler=generation_defaults.scheduler,
                 fps=generation_defaults.fps,
                 vae=generation_defaults.vae,
-                filename=await process_attachment(input_file, interaction) if input_file is not None else None,
+                filename=start_frame_fp,
                 end_image=await process_attachment(end_image, interaction) if end_image is not None else None,
                 style_prompt=generation_defaults.style_prompt,
                 negative_style_prompt=generation_defaults.negative_style_prompt,
@@ -434,8 +473,9 @@ class LTXCommand(ImageGenCommands):
                 latent_upscale_model=generation_defaults.latent_upscale_model,
                 audio_filename=audio_fp,
                 video_start_image_strength=input_file_image_strength or generation_defaults.video_start_image_strength,
-                video_end_image_strength=end_image_strength or generation_defaults.video_end_image_strength
-                
+                video_end_image_strength=end_image_strength or generation_defaults.video_end_image_strength,
+                input_video=video_fp,
+                input_video_type=input_video_type,
             )
             label = "LTX (enhanced)" if enhance_prompt else "LTX"
             await self._do_request(

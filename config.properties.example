@@ -270,6 +270,9 @@ DEFAULT_DURATION=medium
 DURATION_SHORT=7
 DURATION_MEDIUM=10
 DURATION_LONG=14
+# Uploaded input videos may be at most this multiple of the longest duration above
+# (e.g. 3 x DURATION_LONG = 42s)
+INPUT_VIDEO_MAX_LENGTH_MULTIPLIER=3
 DEFAULT_STYLE_PROMPT=
 DEFAULT_NEGATIVE_STYLE_PROMPT=blurry, low quality, still frame, frames, watermark, overlay, titles, has blurbox, has subtitles
 # When True, loads system prompt from prompts/ltx_t2v_system_prompt.txt or prompts/ltx_i2v_system_prompt.txt

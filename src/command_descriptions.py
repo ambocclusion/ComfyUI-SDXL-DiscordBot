@@ -111,6 +111,7 @@ LTX_ARG_DESCS = {
     "aspect_ratio": "Aspect ratio of the generated video",
     "cfg_scale": f"range [1.0, {MAX_CFG}]; Degree to which AI should follow prompt",
     "input_file": "Image to use as first frame",
+    "input_video": "Video to continue from: its last frame becomes the first frame of the new video",
     "audio_file": "Audio file to guide video generation (trimmed/padded to video duration)",
     "lora": "LoRA to apply",
     "duration": "Duration of the video (short=7s, medium=10s, long=14s)",

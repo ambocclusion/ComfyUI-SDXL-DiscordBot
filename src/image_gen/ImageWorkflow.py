@@ -41,6 +41,14 @@ class ControlnetTypes(Enum):
     canny = "canny",
     depth = "depth",
 
+class VideoInputType(Enum):
+    """What to do with a user-supplied input video.
+
+    Only `last_frame` is wired up to the slash commands today; the field exists on
+    ImageWorkflow so further operations can be added without reshaping the pipeline.
+    """
+    last_frame = "last_frame"
+
 @dataclass
 class ImageWorkflow:
     model_type: ModelType
@@ -109,4 +117,6 @@ class ImageWorkflow:
     end_image: Optional[str] = None,
     video_start_image_strength:  Optional[float] = None,
     video_end_image_strength: Optional[float] = None
+    input_video: Optional[str] = None
+    input_video_type: Optional[VideoInputType] = None
     

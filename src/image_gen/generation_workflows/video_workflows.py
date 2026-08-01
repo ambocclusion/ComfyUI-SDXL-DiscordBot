@@ -8,6 +8,7 @@ from PIL import Image
 from comfy_script.runtime import ImageBatchResult
 from comfy_script.runtime.nodes import *
 from src.image_gen.generation_workflows.image_workflows import SDWorkflow
+from src.image_gen.video_input import concat_videos
 from src.util import read_config, load_prompt_file
 
 config = read_config()
@@ -385,4 +386,16 @@ class LTXWorkflow(VideoWorkflow):
         result = await self.output_images
         entry = result._output['images'][0]
         mp4_path = os.path.join(comfy_root_directory, "output", entry.get('subfolder', ''), entry['filename'])
+
+        # The generation continues from the input video's last frame, so deliver the two
+        # as one clip: the original followed by what was generated from it.
+        if self.params.input_video:
+            try:
+                joined_path = os.path.splitext(mp4_path)[0] + '_joined.mp4'
+                mp4_path = concat_videos(self.params.input_video, mp4_path, joined_path)
+            except Exception as e:
+                # Losing the join is better than losing the generation: fall back to the
+                # newly generated clip on its own.
+                print(f"Warning: could not append generated video to input video ({e}), returning generated video only")
+
         return VideoFileResult(mp4_path)

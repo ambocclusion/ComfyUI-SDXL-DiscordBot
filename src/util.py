@@ -192,6 +192,59 @@ async def process_audio_attachment(attachment: Attachment, interaction: Interact
     return os.path.abspath(fp)
 
 
+def get_video_duration(video_path: str) -> float:
+    """Return the duration of a video file in seconds, via ffprobe."""
+    import subprocess
+    result = subprocess.run(
+        [
+            'ffprobe', '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1',
+            video_path,
+        ],
+        check=True, capture_output=True, text=True,
+    )
+    return float(result.stdout.strip())
+
+
+async def process_video_attachment(attachment: Attachment, interaction: Interaction, max_duration_seconds: float = None) -> str:
+    """Save an uploaded video and enforce the configured duration cap.
+
+    Returns the absolute path to the saved video, or None after replying with an
+    error (unsupported type, unreadable file, or over the duration cap).
+    """
+    if not (attachment.content_type or "").startswith("video/"):
+        await interaction.response.send_message(
+            f"{interaction.user.mention} `Only video files (MP4, WebM, MOV, etc.) are supported for input_video`",
+            ephemeral=True,
+        )
+        return None
+
+    os.makedirs("./input", exist_ok=True)
+
+    fp = f"./input/{sanitize_filename(attachment.filename, default='upload.mp4')}"
+    await attachment.save(fp)
+
+    try:
+        duration = get_video_duration(fp)
+    except Exception as e:
+        print(f"Could not read duration of uploaded video {fp}: {e}")
+        await interaction.response.send_message(
+            f"{interaction.user.mention} `Could not read that video file. Please upload a valid MP4/WebM/MOV.`",
+            ephemeral=True,
+        )
+        return None
+
+    if max_duration_seconds is not None and duration > max_duration_seconds:
+        await interaction.response.send_message(
+            f"{interaction.user.mention} `Input video is too long ({duration:.1f}s). The maximum is {max_duration_seconds:.0f}s.`",
+            ephemeral=True,
+        )
+        return None
+
+    return os.path.abspath(fp)
+
+
 def _trim_or_pad_audio(audio_path: str, target_seconds: float) -> str:
     try:
         import subprocess
