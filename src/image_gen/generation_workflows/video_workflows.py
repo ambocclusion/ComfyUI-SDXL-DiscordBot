@@ -347,10 +347,9 @@ class LTXWorkflow(VideoWorkflow):
             self.latent,
         )
 
-        # Separate AV, upscale video, crop guide keyframes
         video_latent, pass1_audio = LTXVSeparateAVLatent(coarse_out)
+        positive2, negative2, video_latent = LTXVCropGuides(self.conditioning, self.negative_conditioning, video_latent)
         video_latent = LTXVLatentUpsampler(video_latent, self.upscale_model, self.vae)
-        positive2, negative2, _ = LTXVCropGuides(self.conditioning, self.negative_conditioning, video_latent)
 
         # Pass 2: refinement with euler on upscaled latent.
         # When audio was provided, use the original encoding as the guide rather than
