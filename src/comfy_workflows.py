@@ -9,7 +9,7 @@ import asyncio
 from PIL import Image
 
 from comfy_script.runtime import Workflow, queue
-from comfy_script.runtime.nodes import LoadImage
+from comfy_script.runtime.nodes import LoadImage, ImageStitch
 from src.ModelDefinition import ModelDefinition
 from src.defaults import MAX_RETRIES
 from src.image_gen.ImageWorkflow import ImageWorkflow, WorkflowType, ModelType
