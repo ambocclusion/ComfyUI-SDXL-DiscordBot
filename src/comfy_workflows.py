@@ -62,12 +62,12 @@ async def _do_edit(params: ImageWorkflow, model_definition: ModelDefinition, int
     with Workflow() as wf:
         workflow = model_definition.workflow(params)
         image_inputs = [LoadImage(filename)[0] for filename in [params.filename, params.filename2] if filename is not None]
+        image_input = image_inputs[0]
+        image2_input = None
         if len(image_inputs)> 1:
-            image_input = ImageStitch(image_inputs[0], 'right', True, 0, 'white', image_inputs[1])
-        else:
-            image_input = image_inputs[0]
+            image2_input = image_inputs[1]
         image_input = workflow.resize_edit_image(image_input)
-        workflow.create_img2img_latents(image_input)
+        workflow.create_img2img_latents(image_input, image2_input)
         workflow.enhance_prompt()
         workflow.condition_prompts()
         workflow.edit_conditioning()

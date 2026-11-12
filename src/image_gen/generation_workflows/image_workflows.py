@@ -51,11 +51,14 @@ class SDWorkflow(GenerationWorkflow):
         latent = EmptyLatentImage(width, height, self.params.batch_size)
         self.latents = [latent]
 
-    def create_img2img_latents(self, image_input: Image):
+    def create_img2img_latents(self, image_input: Image, image2_input: Image = None):
         latent = VAEEncode(image_input, self.vae)
+        latent2 = None
+        if image2_input:
+            latent2 = VAEEncode(image2_input, self.vae)
         if self.params.batch_size > 1:
             latent = RepeatLatentBatch(latent, self.params.batch_size)
-        self.latents = [latent]
+        self.latents = [latent, latent2]
 
     def enhance_prompt(self):
         if not self.params.use_llm:
@@ -350,6 +353,8 @@ class Flux2Workflow(SDWorkflow):
         
     def edit_conditioning(self, use_ays: bool = False):
        self.conditioning = ReferenceLatent(self.conditioning, self.latents[0])
+       if self.latents[1]:
+           self.conditioning = ReferenceLatent(self.conditioning, self.latents[1])
 
 class UpscaleWorkflow(SDWorkflow):
     def load_image(self, file_path: str):
